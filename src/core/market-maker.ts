@@ -174,20 +174,6 @@ export class DlmmMarketMaker {
       let transactions: Transaction[];
       try {
          transactions = await strategyBuilder();
-         
-         // Phase 1: Pre-Flight Simulation & Compute Optimization
-         // We only optimize the final execution payload, usually the last transaction.
-         for (let i = 0; i < transactions.length; i++) {
-           const simResult = await this.transactionSimulator.simulateAndOptimize(transactions[i], activeWallet.keypair);
-           if (!simResult.success || !simResult.optimizedTransaction) {
-             console.error("[SIMULATOR] Pre-flight validation failed. Aborting bundle execution to save tip fees.");
-             // Force a break so it doesn't even try to send
-             return;
-           }
-           transactions[i] = simResult.optimizedTransaction;
-           // Re-sign because simulateAndOptimize returns a fresh transaction
-           transactions[i].sign(activeWallet.keypair);
-         }
       } catch (e) {
          console.error("[ENGINE] Failed to build strategy transactions. Aborting execution:", e);
          break;
@@ -225,6 +211,33 @@ export class DlmmMarketMaker {
       try {
         bundleIds = await this.jitoBundleSender.sendTransactionsWithFallback(transactions, walletKeypairs, dynamicTipSol);
         console.log(`[JITO] Bundle sent to Block Engine. Awaiting stream confirmation...`);
+        
+        // Asynchronous Jito Polling Loop
+        // We poll Jito every 2.5 seconds to see if the bundle was silently dropped.
+        // This allows us to instantly short-circuit the 45-second timeout.
+        if (bundleIds.length > 0) {
+          const bundleId = bundleIds[0];
+          const pollJito = async () => {
+            while (this.pendingConfirmations.has(bundleId)) {
+               await new Promise(r => setTimeout(r, 2500)); // Poll every 2.5s to respect rate limits
+               
+               if (!this.pendingConfirmations.has(bundleId)) break; // Already resolved by gRPC stream
+
+               const status = await this.jitoBundleSender.getBundleStatus(bundleId);
+               if (status && status.err) {
+                 console.log(`[JITO] Bundle dropped by Block Engine. Reason: ${JSON.stringify(status.err)}`);
+                 const pending = this.pendingConfirmations.get(bundleId);
+                 if (pending) {
+                   pending.resolve({ status: 'failed', error: status.err });
+                   this.pendingConfirmations.delete(bundleId);
+                 }
+                 break;
+               }
+            }
+          };
+          pollJito().catch(err => console.error("Jito polling error:", err));
+        }
+
       } catch (e: any) {
         console.error("[JITO] Failed to submit bundle:", e.message || e);
         jitoSubmissionError = e;
@@ -269,6 +282,7 @@ export class DlmmMarketMaker {
           errorType = "SlippageExceeded";
           errorMessage = JSON.stringify(failedResult.error);
         } else if (failedResult.error) {
+          // If the error object came from Jito's err response, it's a SimulationError inside their pipeline
           errorType = "SimulationError";
           errorMessage = failedResult.error.message || JSON.stringify(failedResult.error);
         }

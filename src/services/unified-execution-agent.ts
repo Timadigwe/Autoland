@@ -92,7 +92,7 @@ Competitor Baseline Tip: ${this.cachedBaselineTip} lamports
 Analyze why it failed. 
 If it failed due to BlockhashExpired, it means your tip was outbid in the Jito auction. You must aggressively raise the tip.
 If it failed due to SlippageExceeded, the pool moved too much.
-If it failed due to SimulationError, there is a fundamental math error.
+If it failed due to SimulationError and the details show Jito dropped it, it means the price shifted and Jito protected you from paying a tip for a reverted trade. You MUST RETRY with a refreshed blockhash and a newly calculated strategy, maintaining or increasing the tip.
 
 Decide whether to HALT the trade, or RETRY with a refreshed blockhash and a NEW dynamically calculated overrideTipLamports.
 Max Tip ceiling is 5000000 lamports. Never exceed this.

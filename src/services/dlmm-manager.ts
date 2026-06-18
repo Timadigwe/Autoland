@@ -4,6 +4,7 @@ import BN from 'bn.js';
 import { ConfigManager } from '../utils/config';
 import { Logger } from '../utils/logger';
 import { BotConfig } from '../types/config';
+import { TransactionSimulator } from './transaction-simulator';
 
 export class DlmmManager {
   private connection: Connection;
@@ -121,35 +122,54 @@ export class DlmmManager {
 
       // We wrap the instruction in a transaction
       const newPositionKeypair = Keypair.generate();
+      const slippagePercentage = this.config.trading.maxSlippageBps / 100;
+      
       const addLiquidityTx = await dlmm.initializePositionAndAddLiquidityByStrategy({
         positionPubKey: newPositionKeypair.publicKey,
         user: wallet.publicKey,
         totalXAmount,
         totalYAmount,
         strategy: strategyParams,
+        slippage: slippagePercentage,
       });
 
       const addTxs = Array.isArray(addLiquidityTx) ? addLiquidityTx : [addLiquidityTx];
       
       // Fetch newest blockhash to use for all transactions in the bundle
       const { blockhash } = await this.connection.getLatestBlockhash();
+      const simulator = new TransactionSimulator(this.connection, this.config);
       
-      // Sign remove transactions (only requires wallet)
-      removeLiquidityTxs.forEach(tx => {
+      const optimizedRemoveTxs: Transaction[] = [];
+      const optimizedAddTxs: Transaction[] = [];
+      
+      // Simulate and sign remove transactions (only requires wallet)
+      for (let i = 0; i < removeLiquidityTxs.length; i++) {
+        const tx = removeLiquidityTxs[i];
         tx.recentBlockhash = blockhash;
         tx.feePayer = wallet.publicKey;
-        tx.sign(wallet);
-      });
+        
+        const res = await simulator.simulateAndOptimize(tx, wallet, []);
+        if (!res.success || !res.optimizedTransaction) {
+           throw new Error(`[SIMULATION] Remove liquidity simulation failed: ${res.error}`);
+        }
+        optimizedRemoveTxs.push(res.optimizedTransaction);
+      }
 
-      // Sign add transactions (requires wallet AND ephemeral position keypair)
-      addTxs.forEach(tx => {
+      // Simulate and sign add transactions (requires wallet AND ephemeral position keypair)
+      for (let i = 0; i < addTxs.length; i++) {
+        const tx = addTxs[i];
         tx.recentBlockhash = blockhash;
         tx.feePayer = wallet.publicKey;
-        tx.sign(wallet, newPositionKeypair);
-      });
+        
+        const res = await simulator.simulateAndOptimize(tx, wallet, [newPositionKeypair]);
+        if (!res.success || !res.optimizedTransaction) {
+           throw new Error(`[SIMULATION] Add liquidity simulation failed: ${res.error}`);
+        }
+        optimizedAddTxs.push(res.optimizedTransaction);
+      }
 
       // Return sequentially: Withdrawals FIRST, then Deployment
-      return [...removeLiquidityTxs, ...addTxs];
+      return [...optimizedRemoveTxs, ...optimizedAddTxs];
     } catch (error) {
       console.error("[STRATEGY] Error calculating rebalance strategy:", error);
       throw error;

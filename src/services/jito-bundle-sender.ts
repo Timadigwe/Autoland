@@ -202,33 +202,20 @@ export class JitoBundleSender {
         const jitoFeeTransaction = await this.getJitoTipTransaction(payer.publicKey, jitofee);
         jitoFeeTransaction.sign([payer]);
 
-        const tipSignature = jitoFeeTransaction.signatures[0];
-        if (tipSignature && tipSignature instanceof Uint8Array && tipSignature.length > 0) {
-          const isAllZeros = tipSignature.every(byte => byte === 0);
-          if (!isAllZeros) {
-            jitoTxSignature = bs58.encode(tipSignature);
-            console.log(` Jito tip transaction signature: ${jitoTxSignature.substring(0, 20)}...`);
-          } else {
-            jitoTxSignature = this.generateBundleId();
-          }
-        } else {
-          jitoTxSignature = this.generateBundleId();
-        }
-
         const serializedJitoFeeTransaction = bs58.encode(jitoFeeTransaction.serialize());
         finalTransactions.push(serializedJitoFeeTransaction);
-        console.log('Added Jito tip transaction');
-      } else {
-        // Get signature from first transaction for tracking
-        const firstTx = transactions[0];
-        const firstTxSignature = firstTx.signatures[0];
+        console.log(' Added Jito tip transaction');
+      }
 
-        if (firstTxSignature && firstTxSignature.signature instanceof Uint8Array) {
-          jitoTxSignature = bs58.encode(firstTxSignature.signature);
-          console.log(` Bundle signature: ${jitoTxSignature.substring(0, 20)}...`);
-        } else {
-          jitoTxSignature = this.generateBundleId();
-        }
+      // The Bundle ID in Jito is ALWAYS the signature of the FIRST transaction in the array.
+      const firstTx = transactions[0];
+      const firstTxSignature = firstTx.signatures[0];
+
+      if (firstTxSignature && firstTxSignature.signature instanceof Uint8Array) {
+        jitoTxSignature = bs58.encode(firstTxSignature.signature);
+        console.log(` Bundle signature (ID): ${jitoTxSignature.substring(0, 20)}...`);
+      } else {
+        jitoTxSignature = this.generateBundleId();
       }
 
       // Serialize all transactions
@@ -318,6 +305,36 @@ export class JitoBundleSender {
     });
     
     return signature;
+  }
+
+  public async getBundleStatus(bundleId: string): Promise<{ status: string, err?: any, landed_slot?: number } | null> {
+    if (!bundleId || bundleId.includes("bundle-") || bundleId.includes("placeholder")) {
+      return null;
+    }
+
+    try {
+      // Use the primary Frankfurt endpoint for checking status
+      const url = this.jitoEndpoints[2];
+      const response = await axios.post(url, {
+        jsonrpc: "2.0",
+        id: 1,
+        method: "getInflightBundleStatuses",
+        params: [[bundleId]],
+      });
+
+      if (response.data && response.data.result && response.data.result.value && response.data.result.value.length > 0) {
+         const statusData = response.data.result.value[0];
+         return {
+            status: statusData.status, // "Pending", "Landed", or "Invalid"
+            err: statusData.status === "Invalid" ? (statusData.err || "Invalid") : null,
+            landed_slot: statusData.landed_slot
+         };
+      }
+      return null;
+    } catch (error) {
+      console.warn(`[JITO] Failed to query bundle status for ${bundleId}:`, error instanceof Error ? error.message : String(error));
+      return null;
+    }
   }
 
   public async waitForBundleConfirmation(

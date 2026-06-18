@@ -27,6 +27,7 @@ export interface SimulationConfig {
   commitment?: "processed" | "confirmed" | "finalized";
   sigVerify?: boolean;
   minContextSlot?: number;
+  signers?: Keypair[];
 }
 
 export class TransactionSimulator {
@@ -57,7 +58,14 @@ export class TransactionSimulator {
 
       const { blockhash } = await this.connection.getLatestBlockhash(defaultConfig.commitment);
       transaction.recentBlockhash = blockhash;
-      transaction.sign(wallet);
+      
+      // If signers are provided, use partialSign to not overwrite existing signatures if any
+      if (simulationConfig?.signers && simulationConfig.signers.length > 0) {
+         transaction.signatures = []; // clear to prevent mismatched signatures if re-simulating
+         simulationConfig.signers.forEach(signer => transaction.partialSign(signer));
+      } else {
+         transaction.sign(wallet);
+      }
 
       this.logger.info(` Simulating transaction with ${transaction.instructions.length} instructions`);
       
@@ -75,11 +83,14 @@ export class TransactionSimulator {
 
   public async simulateAndOptimize(
     transaction: Transaction,
-    wallet: Keypair
+    wallet: Keypair,
+    additionalSigners: Keypair[] = []
   ): Promise<{ success: boolean; optimizedTransaction?: Transaction; error?: string }> {
     try {
       this.logger.info(" [SIMULATION] Running local RPC pre-flight simulation...");
-      const result = await this.simulateBuyTransaction(transaction, wallet);
+      const allSigners = [wallet, ...additionalSigners];
+      
+      const result = await this.simulateBuyTransaction(transaction, wallet, { signers: allSigners });
       
       if (!result.success || result.error) {
         this.logger.error(` [SIMULATION] Failed! Transaction will revert on-chain. Reason: ${result.error}`);
@@ -111,6 +122,10 @@ export class TransactionSimulator {
       // Preserve fee payer and blockhash if they existed
       if (transaction.feePayer) optimizedTx.feePayer = transaction.feePayer;
       if (transaction.recentBlockhash) optimizedTx.recentBlockhash = transaction.recentBlockhash;
+
+      // Ensure we explicitly sign the optimized transaction with ALL required signers
+      optimizedTx.signatures = [];
+      allSigners.forEach(signer => optimizedTx.partialSign(signer));
 
       return { success: true, optimizedTransaction: optimizedTx };
     } catch (e: any) {
