@@ -90,11 +90,15 @@ export class GrpcStreamService {
     const req: SubscribeRequest = {
       accounts: {
         tipAccounts: {
-          account: JITO_TIP_ACCOUNTS
+          account: JITO_TIP_ACCOUNTS,
+          owner: [],
+          filters: []
         }
       },
       slots: {
-        slotSub: {}
+        slotSub: {
+          filterByCommitment: true
+        }
       },
       transactions: {
         meteora: {

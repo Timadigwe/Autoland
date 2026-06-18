@@ -12,7 +12,6 @@ export interface BotConfig {
   jito: {
     blockEngineUrl: string;
     tipAccount: string;
-    uuid: string;
     singleTransactionPerBundle: boolean;
   };
   trading: {
@@ -42,29 +41,8 @@ export interface BotConfig {
   };
 }
 
-export interface PoolAccounts {
-  pool: string;
-  lpMint: string;
-  tokenMintA: string;
-  tokenMintB: string;
-  aVault: string;
-  bVault: string;
-  aTokenVault: string;
-  bTokenVault: string;
-  aVaultLp: string;
-  bVaultLp: string;
-  aVaultLpMint: string;
-  bVaultLpMint: string;
-  protocolTokenFee: string;
-}
-
 export interface WalletInfo {
   keypair: any;
   publicKey: string;
   solBalance: number;
-}
-
-export interface TradeTarget {
-  poolAccounts: PoolAccounts;
-  timestamp: number;
 }

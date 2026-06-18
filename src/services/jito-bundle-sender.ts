@@ -23,7 +23,7 @@ export class JitoBundleSender {
     this.config = config;
     this.connection = connection;
     this.jitoTipAccount = new PublicKey(config.jito.tipAccount);
-    
+
     // Jito validator addresses
     this.jitoValidators = [
       "DfXygSm4jCyNCybVYYK6DwvWqjKee8pbDmJGcLWNDXjh",
@@ -38,11 +38,11 @@ export class JitoBundleSender {
 
     // Jito endpoints
     this.jitoEndpoints = [
-      `https://mainnet.block-engine.jito.wtf/api/v1/bundles?uuid=${config.jito.uuid}`,
-      `https://amsterdam.mainnet.block-engine.jito.wtf/api/v1/bundles?uuid=${config.jito.uuid}`,
-      `https://frankfurt.mainnet.block-engine.jito.wtf/api/v1/bundles?uuid=${config.jito.uuid}`,
-      `https://ny.mainnet.block-engine.jito.wtf/api/v1/bundles?uuid=${config.jito.uuid}`,
-      `https://tokyo.mainnet.block-engine.jito.wtf/api/v1/bundles?uuid=${config.jito.uuid}`,
+      `https://mainnet.block-engine.jito.wtf/api/v1/bundles`,
+      `https://amsterdam.mainnet.block-engine.jito.wtf/api/v1/bundles`,
+      `https://frankfurt.mainnet.block-engine.jito.wtf/api/v1/bundles`,
+      `https://ny.mainnet.block-engine.jito.wtf/api/v1/bundles`,
+      `https://tokyo.mainnet.block-engine.jito.wtf/api/v1/bundles`,
     ];
   }
 
@@ -71,7 +71,7 @@ export class JitoBundleSender {
   }
 
   private generateBundleId(): string {
-    return `bundle-${this.config.jito.uuid}-${Date.now()}`;
+    return `bundle-${Date.now()}`;
   }
 
   public async sendBundleWithSingleTransaction(
@@ -80,10 +80,9 @@ export class JitoBundleSender {
     jitofee: number = 0.0001
   ): Promise<string | null> {
     try {
-      const { blockhash } = await this.connection.getLatestBlockhash();
-      transaction.recentBlockhash = blockhash;
-      transaction.feePayer = wallet.publicKey;
-      transaction.sign(wallet);
+      if (!transaction.recentBlockhash || !transaction.feePayer || (!transaction.signatures || transaction.signatures.length === 0)) {
+        throw new Error("Transaction must be pre-constructed and signed.");
+      }
 
       return await this.executeJitoBundle([transaction], wallet, jitofee, true);
     } catch (error) {
@@ -102,13 +101,13 @@ export class JitoBundleSender {
     }
 
     console.log(`Sending ${transactions.length} bundles in parallel...`);
-    
+
     const bundlePromises = transactions.map((transaction, index) =>
       this.sendBundleWithSingleTransaction(transaction, wallets[index], jitofee)
     );
 
     const results = await Promise.allSettled(bundlePromises);
-    
+
     return results.map((result) => {
       if (result.status === "fulfilled") {
         return result.value;
@@ -125,21 +124,13 @@ export class JitoBundleSender {
     jitofee: number = 0.0001
   ): Promise<string[]> {
     const results: string[] = [];
-    
+
     // Try to send all transactions as a single bundle first
     try {
       console.log(`Attempting to send ${transactions.length} transactions as a single Jito bundle...`);
-      
-      // Prepare all transactions
-      const { blockhash } = await this.connection.getLatestBlockhash();
-      for (let i = 0; i < transactions.length; i++) {
-        transactions[i].recentBlockhash = blockhash;
-        transactions[i].feePayer = wallets[i].publicKey;
-        transactions[i].sign(wallets[i]);
-      }
 
       const bundleResult = await this.executeJitoBundle(transactions, wallets[0], jitofee, true);
-      
+
       if (bundleResult) {
         // If bundle succeeds, return the bundle ID for all transactions
         for (let i = 0; i < transactions.length; i++) {
@@ -147,8 +138,20 @@ export class JitoBundleSender {
         }
         return results;
       }
-    } catch (error) {
+    } catch (error: any) {
       console.warn("Jito bundle failed, falling back to individual transactions:", error);
+      
+      // If Jito explicitly rejected the bundle due to simulation failure, the transactions are invalid.
+      // Standard RPC fallback will also fail, so we throw the error upwards to the AI Agent immediately.
+      if (error.message && error.message.includes("Jito API Simulation Error")) {
+        throw error;
+      }
+      
+      // If this is a multi-transaction bundle (Swapless Rebalance), standard RPC will process them out-of-order and fail.
+      // We must throw instead of falling back.
+      if (transactions.length > 1) {
+         throw new Error("Multiple transactions cannot be reliably sent via standard RPC fallback. Aborting to avoid partial execution.");
+      }
     }
 
     // Fallback to individual transactions
@@ -161,7 +164,7 @@ export class JitoBundleSender {
         results.push(`failed-${i}-${Date.now()}`);
       }
     }
-    
+
     return results;
   }
 
@@ -181,19 +184,11 @@ export class JitoBundleSender {
       // Validate all transactions
       for (let i = 0; i < transactions.length; i++) {
         const tx = transactions[i];
-        
-        if (!tx.recentBlockhash) {
-          tx.recentBlockhash = latestBlockhash.blockhash;
+
+        if (!tx.recentBlockhash || !tx.feePayer) {
+          throw new Error(`Transaction ${i + 1} must be fully constructed and signed before sending to Jito`);
         }
-        
-        if (!tx.feePayer) {
-          tx.feePayer = payer.publicKey;
-        }
-        
-        if (!tx.signatures || tx.signatures.length === 0 || !tx.signatures[0].signature) {
-          tx.sign(payer);
-        }
-        
+
         // Validate signature
         const signature = tx.signatures[0];
         if (!signature || !signature.signature) {
@@ -206,7 +201,7 @@ export class JitoBundleSender {
       if (addTip) {
         const jitoFeeTransaction = await this.getJitoTipTransaction(payer.publicKey, jitofee);
         jitoFeeTransaction.sign([payer]);
-        
+
         const tipSignature = jitoFeeTransaction.signatures[0];
         if (tipSignature && tipSignature instanceof Uint8Array && tipSignature.length > 0) {
           const isAllZeros = tipSignature.every(byte => byte === 0);
@@ -219,7 +214,7 @@ export class JitoBundleSender {
         } else {
           jitoTxSignature = this.generateBundleId();
         }
-        
+
         const serializedJitoFeeTransaction = bs58.encode(jitoFeeTransaction.serialize());
         finalTransactions.push(serializedJitoFeeTransaction);
         console.log('Added Jito tip transaction');
@@ -227,7 +222,7 @@ export class JitoBundleSender {
         // Get signature from first transaction for tracking
         const firstTx = transactions[0];
         const firstTxSignature = firstTx.signatures[0];
-        
+
         if (firstTxSignature && firstTxSignature.signature instanceof Uint8Array) {
           jitoTxSignature = bs58.encode(firstTxSignature.signature);
           console.log(` Bundle signature: ${jitoTxSignature.substring(0, 20)}...`);
@@ -248,39 +243,62 @@ export class JitoBundleSender {
         }
       }
 
-      console.log(`📤 Sending bundle with ${finalTransactions.length} transactions to Jito...`);
+      console.log(`Sending bundle with ${finalTransactions.length} transactions to Jito...`);
 
-      const requests = this.jitoEndpoints.map((url) =>
-        axios.post(url, {
-          jsonrpc: "2.0",
-          id: 1,
-          method: "sendBundle",
-          params: [finalTransactions],
-        })
-      );
+      let jitoResponse = null;
+      let jitoError = null;
 
-      const responses = await Promise.all(requests.map((p) => p.catch((e: Error) => e)));
+      // Try primary endpoint (Frankfurt) first to avoid 429 rate limits from broadcasting.
+      // Fallback sequentially to Amsterdam and Mainnet if needed.
+      const primaryEndpoint = this.jitoEndpoints[2]; // Frankfurt
+      const fallbackEndpoints = [this.jitoEndpoints[1], this.jitoEndpoints[0]];
       
-      const errors = responses.filter((r): r is Error => r instanceof Error);
-      const successes = responses.filter((r: any): r is any => !(r instanceof Error));
+      const endpointsToTry = [primaryEndpoint, ...fallbackEndpoints];
       
-      if (errors.length > 0) {
-        console.error(` Jito API errors (${errors.length}/${this.jitoEndpoints.length} endpoints failed)`);
-        errors.forEach((error: Error, index: number) => {
-          console.error(`Error ${index + 1}:`, error.message);
-        });
+      for (const url of endpointsToTry) {
+        try {
+          const response = await axios.post(url, {
+            jsonrpc: "2.0",
+            id: 1,
+            method: "sendBundle",
+            params: [finalTransactions],
+          });
+          
+          // Jito returns HTTP 200 even if the bundle fails internal simulation.
+          // We MUST explicitly check for the embedded error object to detect simulation failures.
+          if (response.data && response.data.error) {
+            throw new Error(`Jito API Simulation Error: ${JSON.stringify(response.data.error)}`);
+          }
+          
+          jitoResponse = response;
+          console.log(` Bundle accepted by Jito endpoint: ${url}`);
+          break; // Success, stop trying other endpoints
+        } catch (error: any) {
+          let errorMsg = error.message;
+          if (error.response && error.response.data) {
+             errorMsg += ` - Data: ${JSON.stringify(error.response.data)}`;
+          }
+          
+          // If it's a simulation error, DO NOT fallback. The transaction is fundamentally invalid.
+          if (errorMsg.includes("Jito API Simulation Error")) {
+             console.error(` Jito Block Engine rejected bundle (Simulation Failed): ${errorMsg}`);
+             throw error; 
+          }
+          
+          console.warn(` Failed to send to ${url}: ${errorMsg}`);
+          jitoError = error;
+        }
       }
-      
-      if (successes.length > 0) {
-        console.log(` Bundle accepted by ${successes.length}/${this.jitoEndpoints.length} Jito endpoints`);
-        return jitoTxSignature;
-      } else {
-        console.error(" Bundle rejected by all Jito endpoints");
-        return null;
+
+      if (!jitoResponse) {
+         console.error(" Bundle rejected by all attempted Jito endpoints.");
+         throw jitoError || new Error("All Jito endpoints failed");
       }
-    } catch (error: unknown) {
-      console.error("Error executing Jito bundle:", error instanceof Error ? error.message : String(error));
-      return null;
+
+      return jitoTxSignature;
+    } catch (error: any) {
+      console.error("Error executing Jito bundle:", error.message || String(error));
+      throw error; // Throw to trigger proper telemetry handling
     }
   }
 
@@ -288,19 +306,18 @@ export class JitoBundleSender {
     transaction: Transaction,
     wallet: Keypair
   ): Promise<string> {
-    const { blockhash } = await this.connection.getLatestBlockhash();
-    transaction.recentBlockhash = blockhash;
-    transaction.feePayer = wallet.publicKey;
-
-    return await sendAndConfirmTransaction(
-      this.connection,
-      transaction,
-      [wallet],
-      {
-        skipPreflight: true,
-        commitment: "processed",
-      }
-    );
+    if (!transaction.recentBlockhash || !transaction.feePayer || (!transaction.signatures || transaction.signatures.length === 0)) {
+       throw new Error("Transaction must be pre-constructed and signed.");
+    }
+    
+    // We do NOT want to use sendAndConfirmTransaction because it is a blocking RPC polling call.
+    // Our entire architecture relies on the gRPC stream. We just blast it to the network.
+    const signature = await this.connection.sendRawTransaction(transaction.serialize(), {
+      skipPreflight: true,
+      maxRetries: 0
+    });
+    
+    return signature;
   }
 
   public async waitForBundleConfirmation(
@@ -308,21 +325,21 @@ export class JitoBundleSender {
     maxWaitTime: number = 30000
   ): Promise<boolean> {
     if (!signature || signature.includes("bundle-") || signature.includes("placeholder")) {
-      console.warn("⚠️ Cannot confirm transaction with placeholder signature");
+      console.warn("Cannot confirm transaction with placeholder signature");
       return false;
     }
 
     console.log(`Confirming transaction: ${signature}`);
-    
+
     try {
       const latestBlockhash = await this.connection.getLatestBlockhash();
-      
+
       const timeoutPromise = new Promise<never>((_, reject) => {
         setTimeout(() => {
           reject(new Error("Transaction confirmation timeout"));
         }, maxWaitTime);
       });
-      
+
       const confirmationPromise = this.connection.confirmTransaction(
         {
           signature,
@@ -331,16 +348,16 @@ export class JitoBundleSender {
         },
         "confirmed"
       );
-      
+
       const confirmation = await Promise.race([confirmationPromise, timeoutPromise]);
       const isConfirmed = !confirmation.value.err;
-      
+
       if (isConfirmed) {
         console.log(" Transaction confirmed successfully");
       } else {
         console.warn("⚠️ Transaction failed:", confirmation.value.err);
       }
-      
+
       return isConfirmed;
     } catch (error: unknown) {
       if (error instanceof Error && error.message.includes("timeout")) {

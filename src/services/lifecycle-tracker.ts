@@ -76,4 +76,26 @@ export class LifecycleTracker {
     }
     return null;
   }
+
+  public getRecentPerformance(limit: number = 5): Array<{ tipAmountLamports: number, stage: string }> {
+    const results: Array<{ tipAmountLamports: number, stage: string }> = [];
+    const signatures = Array.from(this.transactionLogs.keys()).slice(-limit);
+    
+    for (const sig of signatures) {
+      const logs = this.transactionLogs.get(sig);
+      if (logs && logs.length > 0) {
+        const startEvent = logs.find(l => l.stage === 'submitted');
+        const finalEvent = logs.find(l => l.stage === 'confirmed' || l.stage === 'failed');
+        
+        if (startEvent && startEvent.tipAmountLamports !== undefined && finalEvent) {
+          results.push({
+            tipAmountLamports: startEvent.tipAmountLamports,
+            stage: finalEvent.stage
+          });
+        }
+      }
+    }
+    
+    return results;
+  }
 }

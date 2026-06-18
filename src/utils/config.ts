@@ -27,7 +27,6 @@ export class ConfigManager {
       "METEORA_PROGRAM_ID",
       "JITO_BLOCK_ENGINE_URL",
       "JITO_TIP_ACCOUNT",
-      "JITO_UUID",
       "DLMM_TARGET_POOL",
       "OPENROUTER_API_KEY"
     ];
@@ -53,8 +52,7 @@ export class ConfigManager {
       },
       jito: {
         blockEngineUrl: process.env.JITO_BLOCK_ENGINE_URL!,
-        tipAccount: process.env.JITO_TIP_ACCOUNT!,
-        uuid: process.env.JITO_UUID!,
+        tipAccount: process.env.JITO_TIP_ACCOUNT || "96gYZGLnJYVFmbjzopPSU6QiEV5fGqZNyN9nmNhvrZU5",
         singleTransactionPerBundle: process.env.JITO_SINGLE_TRANSACTION_PER_BUNDLE === "true",
       },
       trading: {

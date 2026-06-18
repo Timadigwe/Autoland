@@ -3,6 +3,10 @@ import { DlmmMarketMaker } from "./core/market-maker";
 import { Idl } from "@coral-xyz/anchor";
 import { METEORA_IDL } from "./meteora-idl";
 
+import { Logger } from "./utils/logger";
+
+Logger.getInstance().hijackConsole();
+
 async function main() {
   console.log("Intelligent DLMM Market Maker Bot Starting...");
   console.log("=======================================");
@@ -28,6 +32,25 @@ async function main() {
     });
 
     await bot.start();
+
+    // Setup Keyboard Listener for dynamic testing
+    if (process.stdin.isTTY) {
+      process.stdin.setRawMode(true);
+      process.stdin.resume();
+      process.stdin.setEncoding('utf8');
+      console.log(" \n[READY] Press 'f' to trigger a dynamic failure test. Press 'Ctrl+C' to exit.\n");
+      
+      process.stdin.on('data', (key: string) => {
+        if (key === '\u0003') { // Ctrl+C
+          console.log('\nReceived interrupt signal, shutting down gracefully...');
+          bot.stop();
+          process.exit(0);
+        }
+        if (key.toLowerCase() === 'f') {
+          bot.testJitoFailure().catch(console.error);
+        }
+      });
+    }
 
   } catch (error) {
     console.error("Fatal error:", error);

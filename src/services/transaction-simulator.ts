@@ -7,6 +7,7 @@ import {
   Keypair,
   SimulatedTransactionResponse,
   RpcResponseAndContext,
+  ComputeBudgetProgram,
 } from "@solana/web3.js";
 import { Logger } from "../utils/logger";
 import { BotConfig } from "../types/config";
@@ -69,6 +70,52 @@ export class TransactionSimulator {
         success: false,
         error: error instanceof Error ? error.message : "Unknown simulation error",
       };
+    }
+  }
+
+  public async simulateAndOptimize(
+    transaction: Transaction,
+    wallet: Keypair
+  ): Promise<{ success: boolean; optimizedTransaction?: Transaction; error?: string }> {
+    try {
+      this.logger.info(" [SIMULATION] Running local RPC pre-flight simulation...");
+      const result = await this.simulateBuyTransaction(transaction, wallet);
+      
+      if (!result.success || result.error) {
+        this.logger.error(` [SIMULATION] Failed! Transaction will revert on-chain. Reason: ${result.error}`);
+        return { success: false, error: result.error };
+      }
+      
+      const unitsConsumed = result.unitsConsumed || 1000000;
+      // Add a 10% safety buffer to the actual compute used
+      const optimizedLimit = Math.min(Math.ceil(unitsConsumed * 1.1), 1400000);
+      
+      this.logger.info(` [SIMULATION] Success. Used ${unitsConsumed} CUs. Injecting optimized limit of ${optimizedLimit} CUs...`);
+      
+      // We must insert the compute budget instruction at the VERY BEGINNING of the transaction
+      const computeBudgetIx = ComputeBudgetProgram.setComputeUnitLimit({
+        units: optimizedLimit,
+      });
+      
+      // Create a fresh transaction with the compute budget instruction first
+      const optimizedTx = new Transaction();
+      optimizedTx.add(computeBudgetIx);
+      
+      // Filter out any existing compute budget limits to avoid conflicts
+      transaction.instructions.forEach(ix => {
+        if (!ix.programId.equals(ComputeBudgetProgram.programId)) {
+          optimizedTx.add(ix);
+        }
+      });
+      
+      // Preserve fee payer and blockhash if they existed
+      if (transaction.feePayer) optimizedTx.feePayer = transaction.feePayer;
+      if (transaction.recentBlockhash) optimizedTx.recentBlockhash = transaction.recentBlockhash;
+
+      return { success: true, optimizedTransaction: optimizedTx };
+    } catch (e: any) {
+      this.logger.error(" [SIMULATION] Unexpected error during simulation:", e);
+      return { success: false, error: e.message || String(e) };
     }
   }
 
