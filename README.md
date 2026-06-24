@@ -1,35 +1,87 @@
 # Intelligent DLMM Market Maker
 
-A high-performance, asynchronous market-making stack built for the Solana Transaction Infrastructure Bounty. This bot natively automates liquidity management on Meteora DLMM using a 0ms-latency fixed-distance execution engine, backed by an AI-driven transaction landing stack.
+Production-oriented Meteora DLMM market maker for Solana. Streams live Jito tip data via account balance deltas, monitors pool drift, rebalances via withdraw → in-pool swap → add liquidity, and submits exclusively through Jito bundles.
 
-## System Architecture
-Please review the [Architecture Design Document](./ARCHITECTURE.md) for a complete breakdown of the system's data ingestion, core engine logic, and AI integration.
+## Features
 
-### Core Features
-- **Yellowstone gRPC Stream**: Real-time slot, transaction, and account updates.
-- **DLMM Engine**: Fixed-distance drift threshold for zero-latency Swapless Rebalancing.
-- **Jito Bundle Injection**: Bypasses public gossip for immediate block-engine submission.
-- **Tip Intelligence Agent (AI)**: Asynchronous background loop that calculates Tip Multipliers based on real-time network congestion.
-- **Failure Reasoning Agent (AI)**: Synchronous loop that intercepts dropped or failed bundles, dynamically mutating the payload (e.g. refreshing blockhashes) for autonomous retries.
+- **Live tip intelligence** — Yellowstone gRPC account subscriptions on 8 Jito tip accounts; rolling p90/p99 baseline without the mainnet tip tx firehose
+- **Backpressure-safe gRPC** — bounded event queue with drop-oldest policy; async batch drain (no inline processing on receive path)
+- **Position engine** — cold-starts positions when none exist; rebalances when active bin drifts beyond threshold
+- **Meteora in-pool swaps** — 50/50 rebalance using the same DLMM pool (not Jupiter)
+- **Jito-only submission** — sequential regional endpoint submit (stop on first acceptance), tip verification, success-only cooldown
+- **Robust confirmation** — gRPC transaction status + Jito inflight/bundle status + tiered timeouts
+- **Autonomous failure recovery** — AI agent with log/incident/session tools; confidence-based routing; DEFER for transient issues
+- **Session memory** — tracks mutations tried per rebalance so agent doesn't repeat failed actions
+- **Health monitoring** — RPC/Jito/sim/grpc snapshots included in every failure incident
 
 ## Quickstart
-1. Set up `.env` with `JITO_AUTH_TOKEN`, `OPENROUTER_API_KEY`, and `PRIVATE_KEY`.
+
+1. Copy `env.example` to `.env` and configure:
+   - `GRPC_URL`, `X_TOKEN`, `RPC_URL`
+   - `DLMM_TARGET_POOL`, `PRIVATE_KEYS_FILE`
+   - `OPENROUTER_API_KEY`
 2. `npm install`
 3. `npm run build`
 4. `npm start`
-*Note: Press 'F' while the bot is running to intentionally inject an expired blockhash, triggering the AI Failure Reasoning autonomous retry loop.*
 
----
+Start with `DRY_RUN=true` to validate transaction building without submitting bundles.
 
-## Bounty Questions & Network Observations
+Press **`f`** at runtime to inject a Jito failure test (expired blockhash).
 
-### Question 1: What does the delta between processed_at and confirmed_at tell you about network health at the time of submission?
-The delta between `processed` (the moment the leader processes the transaction into a block) and `confirmed` (the moment 66%+ of validators have voted on that block) is the ultimate metric for measuring **propagation latency and consensus health**. 
-During our telemetry gathering, a healthy network exhibited a delta of roughly 400-800ms. If this delta begins expanding to multiple seconds, it indicates severe TPU congestion, significant vote delays, or minor forks causing validators to struggle to reach supermajority consensus. For high-frequency trading, expanding deltas are a leading indicator that you must increase your Compute Unit Price to ensure priority inclusion in subsequent blocks.
+## Architecture
 
-### Question 2: Why should you never use finalized commitment when fetching a blockhash for a time-sensitive transaction?
-On Solana, a blockhash is only valid for exactly 150 slots (roughly 60 seconds). A `finalized` block is typically ~31 blocks (about 12 seconds) behind the current live chain tip. If you fetch a `finalized` blockhash for a time-sensitive transaction, you are artificially burning 20% of your transaction's lifespan before you even submit it! For MEV bundles or DLMM rebalances where every millisecond counts against the Jito Block Engine's auction window, you must always fetch a `confirmed` or `processed` blockhash to maximize your transaction's validity window across potential retries.
+See [ARCHITECTURE.md](./ARCHITECTURE.md) for the full system design.
 
-### Question 3: What happens to your bundle if the Jito leader skips their slot?
-If you submit a bundle to the Jito Block Engine and the designated leader skips their slot (due to network partitions, being offline, or a fork), your bundle is not immediately dead, but it **fails to land in that specific block**. 
-However, the Jito Block Engine operates as a specialized mempool. It will hold your bundle and automatically re-auction it to the *next* available Jito leader. The true danger here is the blockhash. If the Block Engine holds the bundle for too long across multiple skipped slots, the blockhash will expire, and the transaction will be permanently dropped. This is exactly why our architecture includes an AI Failure Agent that intercepts these timeouts, refreshes the blockhash, and submits an autonomous retry.
+```
+gRPC (tip account deltas) ──► TipTracker (p90/p99)
+                                    │
+PositionEngine ──► RebalanceBuilder ──► JitoSubmitter ──► ConfirmationTracker
+                    ▲                                      │
+                    └──────── FailureAdvisor ◄─────────────┘
+```
+
+## Key Environment Variables
+
+| Variable | Purpose |
+|----------|---------|
+| `DLMM_TARGET_POOL` | Meteora DLMM pool address |
+| `DRIFT_THRESHOLD_BINS` | Rebalance when drift exceeds this (default: 5) |
+| `STRATEGY_BIN_COUNT` | Bins around active bin (default: 11) |
+| `DLMM_STRATEGY` | `Curve`, `Spot`, or `BidAsk` |
+| `JITO_MIN_TIP_LAMPORTS` | Floor tip until enough samples |
+| `TIP_MIN_SAMPLES_BEFORE_EXECUTION` | Min gRPC tip samples before first deploy/rebalance (default: 50) |
+| `PREFLIGHT_MIN_TIP_RATIO` | Bump tip pre-submit if below this fraction of recommended (default: 0.8) |
+| `PREFLIGHT_MAX_BIN_DRIFT` | Rebuild bundle if active bin moved more than N bins since build (default: 2) |
+| `SWAP_BIN_ARRAY_COUNT` | Bin arrays fetched for in-pool swap quote (default: 8) |
+| `SWAP_MAX_EXTRA_BIN_ARRAYS` | Extra bin arrays attached to swap tx (default: 3, max SDK limit) |
+| `JITO_MAX_TIP_LAMPORTS` | Hard tip ceiling (default: 5M lamports) |
+| `GRPC_MAX_QUEUE_SIZE` | Max gRPC event queue depth before dropping oldest (default: 5000) |
+| `GRPC_TIP_SAMPLE_INTERVAL_MS` | Min ms between tip samples (default: 250) |
+| `AI_ADVISOR_AFTER_ATTEMPT` | Force AI from attempt N even if confidence high (default: 2) |
+| `AI_MAX_DEFERS_PER_SESSION` | Max DEFER actions per rebalance (default: 2) |
+| `DRY_RUN` | Build txs but skip Jito submission |
+
+## Scripts
+
+```bash
+npm run build          # Compile TypeScript
+npm start              # Run compiled bot
+npm run dev            # Run with ts-node
+npm run test:ai-agent  # Test tip tracker + failure advisor
+```
+
+## Project Layout
+
+```
+src/
+├── core/           bot.ts, position-engine.ts
+├── execution/      rebalance-builder, jito-submitter, jito-bundle-simulator, confirmation-tracker
+├── intelligence/   tip-tracker, failure-advisor, advisor-tools, execution-session, health-monitor
+├── stream/         grpc-client, tip-balance-watcher
+├── services/       wallet-manager
+└── types/          config, execution-state
+```
+
+## License
+
+MIT

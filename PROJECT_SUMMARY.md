@@ -1,36 +1,55 @@
-# Intelligent DLMM Market Maker - Project Summary
+# Project Summary
 
-## ✅ **CORE FEATURES**
+## Implemented
 
-### 1. **Project Architecture**
-- ✅ Well-structured directory layout optimized for market making operations.
-- ✅ TypeScript configuration with strict typing.
-- ✅ `@meteora-ag/dlmm` and `openai` dependencies integrated.
+### Core
+- `DlmmBot` — orchestrator with autonomous failure recovery
+- `PositionEngine` — drift detection, cold-start, state machine
+- `ExecutionSession` — per-rebalance memory (incidents, decisions, mutations tried)
 
-### 2. **AI-Driven Transaction Engine**
-- ✅ **OpenRouter Integration** - Fetches optimal Jito tips dynamically.
-- ✅ **GRPC Data Pipeline** - Feeds live slot and transaction volume data to the AI agent.
-- ✅ **Fallback Mechanisms** - Defends against API timeouts with configurable default priority fees.
+### Execution
+- `RebalanceBuilder` — withdraw → swap → add (slippageBps override, skip swap)
+- `JitoSubmitter` + `JitoBundleSimulator` — simulateBundle + sequential sendBundle
+- `ConfirmationTracker` — gRPC + Jito + RPC confirmation
+- `HealthMonitor` — RPC/Jito/sim/grpc health snapshots
 
-### 3. **Market Making Infrastructure**
-- ✅ **DLMM Position Management** - Automatically detects if wallets lack positions and provisions initial liquidity across calculated bins.
-- ✅ **Wallet Manager** - Multi-wallet initialization and load balancing.
-- ✅ **Jito Bundle Sender** - Packages liquidity instructions and the dynamically calculated tip into optimized bundles.
-- ✅ **Transaction Simulator** - Simulates all transactions locally before executing to save compute and avoid failures.
+### Intelligence
+- `TipTracker` — rolling tip percentiles
+- `FailureAdvisor` — confidence routing + AI agent with tools
+- `AdvisorTools` — read logs, incidents, session memory, config
+- `error-parser` — program error codes, confidence classification
+- `safety-guardrails` — bounded mutations, phase rules, HALT conditions
+- `IncidentStore` — structured JSON in `logs/incidents/`
 
-## 🔧 **IMPLEMENTATION DETAILS**
+### Infrastructure
+- `GrpcClient` + `TipBalanceWatcher` — backpressure-safe tip intelligence
+- `WalletManager`, `Logger`
 
-### **AI Tipping Agent (`src/services/ai-tipping-agent.ts`)**
-Uses OpenRouter API models to compute dynamic priority fees. Analyzes network variables like `transactionsInRecentBlocks` and `poolVolatility` to output a precise lamport fee formatted cleanly as JSON.
+## Module Layout
 
-### **DLMM Manager (`src/services/dlmm-manager.ts`)**
-Built on the official Meteora SDK. Uses `getPositionsByUserAndLbPair` to read state and `initializePositionAndAddLiquidityByStrategy` to handle automated provision.
+```
+src/
+├── core/bot.ts, position-engine.ts
+├── execution/rebalance-builder.ts, jito-submitter.ts, jito-bundle-simulator.ts, confirmation-tracker.ts
+├── intelligence/
+│   tip-tracker.ts, failure-advisor.ts, advisor-tools.ts
+│   execution-incident.ts, execution-session.ts, health-monitor.ts
+│   error-parser.ts, safety-guardrails.ts
+├── stream/grpc-client.ts, tip-balance-watcher.ts
+└── types/, utils/
+```
 
-### **GRPC Stream (`src/services/grpc-stream.ts`)**
-Listens to Yellowstone GRPC channels for transaction changes and newly generated block slots to measure network speed and feed context to the AI Tipping Agent.
+## Recovery Behavior
 
-## 📋 **NEXT STEPS FOR FUTURE DEVELOPMENT (Phase 2)**
+1. Failure → structured incident with confidence + health + session memory
+2. High-confidence shortcuts only when safe (e.g. slippage on sim)
+3. Unknown/transient/repeated → AI agent with log tools
+4. Guardrails enforce caps; DEFER for network issues; HALT when exhausted
 
-1. **Intelligent Rebalancing:** Actively shift liquidity bins when price moves out of the initially provisioned range.
-2. **Yield Monitoring:** Track fee earnings versus impermanent loss over time.
-3. **Advanced AI Strategies:** Feed more granular market data to the AI model to predict short-term price direction and skew liquidity heavily to one side (bid/ask).
+## Scripts
+
+| Command | Purpose |
+|---------|---------|
+| `npm run build` | Compile |
+| `npm start` | Run bot |
+| `npm run test:ai-agent` | Test advisor + session |

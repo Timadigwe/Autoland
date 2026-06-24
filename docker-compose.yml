@@ -1,0 +1,14 @@
+version: "3.8"
+
+services:
+  autoland-bot:
+    build: .
+    container_name: autoland-bot
+    env_file:
+      - .env
+    restart: unless-stopped
+    volumes:
+      # Persist the sqlite database locally outside the container
+      - ./autoland.db:/app/autoland.db
+
+

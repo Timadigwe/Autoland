@@ -1,54 +1,169 @@
-# Architecture Design Document: Intelligent DLMM Stack
+# Architecture Design Document
 
 ## 1. System Overview
-The Intelligent DLMM Stack is a high-performance, asynchronous market-making bot designed to manage concentrated liquidity on Solana (specifically Meteora DLMM). 
 
-The system solves the "latency vs. intelligence" trade-off by strictly separating execution logic from AI reasoning:
-1. **Core Engine (Execution):** Uses a zero-latency, math-based fixed-distance threshold to instantly trigger rebalances.
-2. **AI Stack (Transaction Landing):** Operates asynchronously to pre-compute tips, and synchronously on failures to mutate payloads for retries.
+The Intelligent DLMM bot manages concentrated liquidity on Meteora DLMM pools. Execution logic (drift detection, rebalance building) is deterministic and fast. **Failure recovery is autonomous**: a single AI agent with read-only tools decides retries within hard safety guardrails.
+
+**Submission path: Jito bundles only.** Public RPC is used for reads, `simulateBundle`, and confirmation fallback — never for transaction submission.
 
 ---
 
 ## 2. Component Architecture
 
-### A. Data Ingestion (Yellowstone gRPC)
-- **Component:** `GrpcStreamService`
-- **Role:** Subscribes to Account and Slot streams to provide millisecond-accurate updates.
-- **Responsibility:** Tracks live Jito tip medians (via tip account changes) and triggers the Core Engine evaluation loop every 25 slots (~10 seconds). It also tracks exact lifecycle events (`Processed`, `Confirmed`, `Finalized`) without relying on slow RPC polling.
+### A. Data Ingestion (`GrpcClient` + `TipBalanceWatcher`)
 
-### B. Core Engine (DLMM Fixed-Distance Trigger)
-- **Component:** `DlmmMarketMaker`
-- **Role:** Handles the instantaneous deployment and reshaping of liquidity.
-- **Data Flow:** Every 10 seconds, it fetches the live `activeBin` from the DLMM contract. It calculates the drift `abs(activeBin - positionCenter)`.
-- **Logic:** If drift > 5 bins, it triggers a `Swapless Rebalance` to re-center liquidity. Because this is pure math, execution latency is 0ms.
+- Jito tip account balance deltas (not mainnet tip tx firehose)
+- Slot updates → `JitoSubmitter`
+- Transaction status → dynamic per-signature subscription
+- Bounded event queue with async drain (backpressure-safe)
 
-### C. AI Tip Intelligence (Asynchronous Background Agent)
-- **Component:** `AiTippingAgent`
-- **Role:** Optimizes Jito tips without blocking the execution thread.
-- **Data Flow:** Every 60 seconds, it feeds OpenRouter data on network congestion (median tips, slot speeds). It caches a `TipStrategy` multiplier.
-- **Integration:** When the Core Engine fires a transaction, it instantly reads the cached multiplier and calculates `LiveMedianTip * Multiplier`.
+### B. Tip Intelligence (`TipTracker`)
 
-### D. Jito Bundle Submission & Retry Loop
-- **Component:** `JitoBundleSender` & `LifecycleTracker`
-- **Role:** Bypasses public gossip to submit atomic bundles directly to the Jito Block Engine.
-- **Retry Mechanism:** Waits for confirmation via the gRPC stream. If the bundle drops or hits the 45-second blockhash expiry timeout, it enters the Autonomous Retry Loop.
+- Rolling p50/p90/p99 from tip account deltas
+- `getRecommendedTipLamports()` with margin + caps
 
-### E. AI Failure Agent (Synchronous Mutation)
-- **Component:** `AiFailureAgent`
-- **Role:** Fulfills the "Failure Reasoning" AI bounty requirement.
-- **Data Flow:** When a transaction fails, exact telemetry (`BlockhashExpired`, `SimulationError`) is passed to the AI.
-- **Decision:** The AI evaluates the error. If `SlippageExceeded`, it halts to protect capital. If `BlockhashExpired`, it instructs the retry loop to fetch a new blockhash and increase the tip multiplier.
+### C. Position Engine (`PositionEngine`)
+
+State machine: `NO_POSITION` → deploy | `IN_RANGE` → hold | `DRIFT_DETECTED` → rebalance | `REBALANCING` / `CONFIRMING` / `FAILED`
+
+### D. Rebalance Builder (`RebalanceBuilder`)
+
+Initial deploy uses wallet balances only (no swap). Rebalance: withdraw → mandatory in-pool swap (binary-search partial swap if full quote fails) → add liquidity. Supports per-attempt `slippageBps` override.
+
+### E. Jito Submission (`JitoSubmitter` + `JitoBundleSimulator`)
+
+1. Build & sign bundle with fresh blockhash
+2. **`simulateBundle`** via Jito-enabled RPC (atomic, in-order)
+3. Sequential regional `sendBundle`
+4. Record outcomes → `HealthMonitor`
+
+### F. Health Monitor (`HealthMonitor`)
+
+Rolling 5-minute window of:
+- RPC latency / failures
+- Jito accept rate / rate limits
+- Simulation pass rate
+- gRPC queue depth / dropped events
+
+Included in every `ExecutionIncident.health` snapshot.
+
+### G. Autonomous Failure Recovery
+
+```
+Failure
+  → parse error (phase, code, confidence)
+  → ExecutionIncident + sessionMemory + health
+  → save logs/incidents/{uuid}.json
+  → route decision:
+       high-confidence shortcut? → deterministic (optional speed path)
+       low confidence / unknown / repeated / attempt ≥ N → AI agent
+  → applySafetyGuardrails (caps, phase rules, HALT conditions)
+  → RETRY | DEFER | HALT
+```
+
+#### ExecutionSession (learn within session)
+
+Per rebalance execution, tracks:
+- All incidents this session
+- All decisions + mutations applied
+- Defer count
+- Repeated failure detection (same errorType + phase ≥ 2)
+
+Passed to AI in every incident and via `read_session_memory` tool.
+
+#### Confidence routing
+
+| Confidence | When | Decision path |
+|------------|------|---------------|
+| **high** | Parsed program code (6003), blockhash stale | Optional deterministic shortcut |
+| **medium** | Jito reject, auction drop | AI agent (or shortcut if not repeated) |
+| **low** | Unknown, transient, network, confirm timeout | **AI agent immediately** |
+
+#### AI agent tools (read-only)
+
+| Tool | Purpose |
+|------|---------|
+| `read_log_tail` | Recent `[ENGINE]`/`[JITO]`/`[STRATEGY]` lines |
+| `read_lifecycle_events` | Recent `lifecycle-log.jsonl` |
+| `read_incident` | Structured incident JSON |
+| `read_session_memory` | Session incidents + mutations + **attempt timeline** |
+| `get_config_slice` | Relevant env limits |
+| `get_tip_market_stats` | p50/p90/p99, recommended, sample count |
+| `get_pool_snapshot` | Cached active bin, position range, drift |
+| `get_attempt_timeline` | Per-attempt funnel (build→preflight→sim→jito→confirm) |
+| `list_similar_incidents` | Past incidents same errorType+phase with outcomes |
+| `read_simulation_logs` | Last simulateBundle logs this session |
+
+#### Pre-flight gate (deterministic, no LLM)
+
+Before Jito submit each attempt:
+1. **Bin freshness** — if active bin moved > `PREFLIGHT_MAX_BIN_DRIFT` since build → rebuild (no attempt consumed)
+2. **Tip check** — if `partial_swap_used` or tip < 80% recommended → bump to recommended
+3. **Health + underbid** — defer if health degraded and underbid
+
+Tip-only changes do not require tx rebuild; blockhash refreshed at submit.
+
+#### Actions
+
+| Action | Meaning |
+|--------|---------|
+| **RETRY** | Apply mutations, next attempt in loop |
+| **DEFER** | Wait `waitMs`, exit cycle, retry on next poll (network/transient) |
+| **HALT** | Stop execution, set `FAILED` |
+
+#### Safety guardrails (always code-enforced)
+
+- Tip ≤ `JITO_MAX_TIP_LAMPORTS`
+- Slippage ≤ `AI_MAX_SLIPPAGE_BPS_CAP`
+- No tip escalation on `bundle_simulation` + slippage errors
+- HALT after skip_swap + persistent slippage
+- Max defers per session (`AI_MAX_DEFERS_PER_SESSION`)
+
+### H. Confirmation Tracker (`ConfirmationTracker`)
+
+gRPC status + Jito inflight/bundle status + RPC polling with tiered timeouts.
 
 ---
 
-## 3. Failure Handling Strategy
+## 3. Failure Handling Flow
 
-The system classifies failures into specific vectors and handles them deterministically:
-1. **Blockhash Expiration:** Detected locally via a 45-second timeout on the confirmation promise. The AI Agent intercepts this, fetches a fresh blockhash via RPC, and resubmits.
-2. **Jito Bundle Dropped:** Handled identically to blockhash expiration. The bundle is deemed dropped if not processed within the timeout window.
-3. **Simulation/Slippage Errors:** Simulated locally via `TransactionSimulator`. If a hard error occurs, the bot aborts the trade.
+```
+simulateBundle fail (6003)
+  → confidence=high, phase=bundle_simulation
+  → agent: slippageBps↑ or skipSwap (guardrail blocks tip-only)
+
+Jito reject / 429
+  → confidence=low/medium
+  → agent: tip↑ or DEFER if health degraded
+
+Confirm timeout
+  → confidence=low
+  → agent: tip↑ or DEFER
+
+Repeated same failure twice
+  → force agent even on attempt 1
+```
 
 ---
 
-## 4. Why This Architecture Wins
-By completely removing the AI from the *strategy selection* phase, we eliminate the 1-3 second latency of waiting for LLM APIs. By migrating the AI to the *transaction landing* phase, we harness machine learning for what it does best: dynamic pricing (Tip Intelligence) and adaptive fault recovery (Failure Reasoning), ensuring our 0ms algorithmic trades actually land on the blockchain.
+## 4. Configuration
+
+See `env.example`. Key AI/recovery vars:
+
+```
+AI_ADVISOR_AFTER_ATTEMPT=2
+AI_USE_AGENT_FOR_LOW_CONFIDENCE=true
+AI_MAX_DEFERS_PER_SESSION=2
+AI_DEFAULT_DEFER_MS=10000
+AI_MAX_SLIPPAGE_BPS_CAP=2500
+```
+
+---
+
+## 5. Logs & Artifacts
+
+| Path | Content |
+|------|---------|
+| `logs/dlmm-mm-YYYY-MM-DD.log` | Full bot log |
+| `logs/lifecycle-log.jsonl` | Tx lifecycle events |
+| `logs/incidents/{uuid}.json` | Structured failure incidents |
