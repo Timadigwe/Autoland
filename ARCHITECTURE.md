@@ -2,9 +2,12 @@
 
 This document details the architecture, data flows, and recovery strategies implemented in the AutoLand transaction execution stack.
 
+> **Live Specification Page:** This design document is rendered as a premium responsive web application and hosted live at:
+> **[AutoLand Live Architecture Specification](https://dazzling-duckanoo-9fcd98.netlify.app/)**
+
 ---
 
-## 1. System Topology & Reusability
+## 1. SDK Core Architecture & Reference Integration
 
 AutoLand is built as a reusable, developer-focused **Intelligent Transaction Execution Stack SDK** (`@autoland/core`). 
 
@@ -149,12 +152,24 @@ To prevent model hallucinations from causing financial loss, the advisor's sugge
 
 ## 5. Submission & Confirmation Pipelines
 
-### A. Jito-First Dispatch
+### A. Jito-First Dispatch & Leader Window Detection
 * Transaction submission is restricted to Jito bundles to prevent toxic frontrunning or trade slippage.
 * Bundles are sent sequentially to regional Jito block engines (e.g., Frankfurt, NY, Tokyo) to minimize latency and stopped as soon as the bundle is accepted.
+* **Leader Window Alignment**: AutoLand uses a real-time **Yellowstone gRPC** stream to monitor live slot progress and leader schedule transitions. It dynamically calculates the distance to the next Jito-enabled validator, ensuring bundles are submitted exactly within the optimal leader execution window.
 
-### B. Dual-Channel Confirmation
+### B. Multi-Stage Lifecycle & Dual-Channel Confirmation
+To guarantee landing accuracy, the SDK implements a dual-channel confirmation pipeline. It tracks the transaction through every lifecycle stage: **Submitted → Processed → Confirmed → Finalized**, capturing:
+* **Timestamps** at each transition.
+* **Slot numbers** representing the exact execution sequence.
+* **Latency deltas** between stages to monitor network consensus performance.
+
 Confirmations are tracked simultaneously via:
 1. **Yellowstone gRPC Stream**: Dynamically registers signature status tracking filters inside the Yellowstone subscription to catch processed transactions at sub-second speeds.
 2. **RPC Polling Fallback**: Periodically queries `getSignatureStatuses` directly from the RPC nodes as a backup.
 3. **Jito Bundle Results gRPC Stream**: Subscribes to Jito's streaming `SubscribeBundleResults` API to immediately catch validator-level rejections (simulation failure, bid rejected) and fail fast, triggering the AI retry loop instantly instead of waiting for a timeout.
+
+If a transaction fails to progress, the system classifies the exact failure:
+* **Expired Blockhash**: Blockhash exceeded the 150-slot TTL window.
+* **Fee Too Low**: Jito auction floor/tip density not met.
+* **Compute Exceeded**: Transaction exceeded the allocated compute limits.
+* **Bundle Failure**: Validator dropped the Jito bundle (e.g. leader skip or simulation error).

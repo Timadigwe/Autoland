@@ -1,0 +1,1717 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AutoLand — Technical Architecture & Pitch Deck Specification</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap"
+    rel="stylesheet">
+  <style>
+    :root {
+      --bg-primary: #070b13;
+      --bg-secondary: #0d1220;
+      --card-bg: #12182c;
+      --border-color: rgba(255, 255, 255, 0.08);
+      --border-highlight: #3b82f6;
+      --text-primary: #f8fafc;
+      --text-secondary: #94a3b8;
+      --text-muted: #64748b;
+      --accent-blue: #3b82f6;
+      --accent-green: #10b981;
+      --accent-amber: #f59e0b;
+      --accent-red: #ef4444;
+      --sans: 'Inter', system-ui, sans-serif;
+      --mono: 'JetBrains Mono', monospace;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background-color: var(--bg-primary);
+      color: var(--text-primary);
+      font-family: var(--sans);
+      font-size: 14px;
+      line-height: 1.5;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    .container {
+      max-width: 1000px;
+      margin: 0 auto;
+      padding: 0 32px;
+    }
+
+    /* --- HEADER BLOCK --- */
+    header {
+      padding: 64px 0 40px;
+      border-bottom: 1px solid var(--border-color);
+    }
+
+    .hero-eyebrow {
+      font-family: var(--mono);
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--accent-blue);
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      margin-bottom: 12px;
+    }
+
+    h1 {
+      font-size: 40px;
+      font-weight: 800;
+      letter-spacing: -0.03em;
+      line-height: 1.1;
+      margin-bottom: 16px;
+    }
+
+    .hero-subtitle {
+      font-size: 16px;
+      color: var(--text-secondary);
+      max-width: 780px;
+      line-height: 1.6;
+      margin-bottom: 32px;
+    }
+
+    .metadata-bar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+
+    .meta-tag {
+      font-family: var(--mono);
+      font-size: 11px;
+      padding: 6px 12px;
+      border-radius: 4px;
+      background-color: var(--bg-secondary);
+      border: 1px solid var(--border-color);
+      color: var(--text-secondary);
+    }
+
+    /* --- TOC BAR --- */
+    .toc-bar {
+      position: sticky;
+      top: 0;
+      background-color: rgba(7, 11, 19, 0.85);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+      z-index: 1000;
+      padding: 12px 0;
+    }
+
+    .toc-links {
+      display: flex;
+      gap: 20px;
+      list-style: none;
+      overflow-x: auto;
+      scrollbar-width: none;
+    }
+
+    .toc-links::-webkit-scrollbar {
+      display: none;
+    }
+
+    .toc-links a {
+      color: var(--text-secondary);
+      text-decoration: none;
+      font-size: 11px;
+      font-weight: 600;
+      font-family: var(--mono);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      transition: color 0.1s ease;
+    }
+
+    .toc-links a:hover {
+      color: var(--text-primary);
+    }
+
+    /* --- SECTIONS --- */
+    .section {
+      padding: 64px 0;
+      border-bottom: 1px solid var(--border-color);
+    }
+
+    .section:last-of-type {
+      border-bottom: none;
+    }
+
+    .section-num {
+      font-family: var(--mono);
+      font-size: 11px;
+      color: var(--accent-blue);
+      font-weight: 600;
+      margin-bottom: 6px;
+    }
+
+    h2 {
+      font-size: 24px;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      color: var(--text-primary);
+      margin-bottom: 8px;
+    }
+
+    .section-desc {
+      color: var(--text-secondary);
+      font-size: 14px;
+      line-height: 1.6;
+      margin-bottom: 24px;
+    }
+
+    /* --- STORY STEPS GRID --- */
+    .story-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 20px;
+      margin: 28px 0;
+    }
+
+    @media (max-width: 768px) {
+      .story-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .story-card {
+      background-color: var(--card-bg);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 8px;
+      padding: 24px;
+      transition: border-color 0.2s ease, transform 0.2s ease;
+    }
+
+    .story-card:hover {
+      border-color: var(--border-highlight);
+      transform: translateY(-2px);
+    }
+
+    .story-card-hdr {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 14px;
+    }
+
+    .story-card-num {
+      font-family: var(--mono);
+      font-size: 11px;
+      font-weight: bold;
+      padding: 4px 10px;
+      border-radius: 4px;
+      background-color: rgba(59, 130, 246, 0.15);
+      color: #60a5fa;
+    }
+
+    .story-card:nth-child(2) .story-card-num {
+      background-color: rgba(245, 158, 11, 0.15);
+      color: #fbbf24;
+    }
+
+    .story-card:nth-child(3) .story-card-num {
+      background-color: rgba(16, 185, 129, 0.15);
+      color: #34d399;
+    }
+
+    .story-card h3 {
+      font-size: 15px;
+      font-weight: 700;
+      color: var(--text-primary);
+    }
+
+    .story-card p {
+      font-size: 12.5px;
+      color: #cbd5e1;
+      line-height: 1.6;
+    }
+
+    .story-card code {
+      font-family: var(--mono);
+      font-size: 11.5px;
+      background-color: rgba(255, 255, 255, 0.08);
+      padding: 2px 5px;
+      border-radius: 4px;
+      color: #3b82f6;
+    }
+
+    .grid-2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 24px;
+    }
+
+    @media (max-width: 768px) {
+      .grid-2 {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .deck-card {
+      background-color: var(--bg-secondary);
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      padding: 24px;
+    }
+
+    .deck-card h3 {
+      font-size: 15px;
+      font-weight: 700;
+      margin-bottom: 12px;
+      color: var(--text-primary);
+    }
+
+    .deck-card p {
+      font-size: 13px;
+      color: var(--text-secondary);
+      line-height: 1.5;
+    }
+
+    .deck-bullet {
+      list-style: none;
+      margin-top: 12px;
+    }
+
+    .deck-bullet li {
+      font-size: 12px;
+      color: var(--text-secondary);
+      margin-bottom: 6px;
+      padding-left: 14px;
+      position: relative;
+    }
+
+    .deck-bullet li::before {
+      content: "•";
+      color: var(--accent-blue);
+      position: absolute;
+      left: 0;
+    }
+
+    /* --- DIAGRAMS --- */
+    .diag-box {
+      background-color: var(--card-bg);
+      border: 1px solid var(--border-color);
+      border-radius: 6px;
+      padding: 20px;
+      margin: 24px 0;
+    }
+
+    .diag-box-title {
+      font-family: var(--mono);
+      font-size: 11px;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      margin-bottom: 16px;
+      letter-spacing: 0.05em;
+    }
+
+    .svg-diag {
+      width: 100%;
+      height: auto;
+      background-color: var(--bg-primary);
+      border: 1px solid var(--border-color);
+      border-radius: 6px;
+      display: block;
+      margin: 16px 0;
+    }
+
+    /* Pipeline Timeline */
+    .pipeline-timeline {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background-color: var(--bg-secondary);
+      border: 1px solid var(--border-color);
+      padding: 20px;
+      border-radius: 6px;
+      margin: 20px 0;
+      overflow-x: auto;
+    }
+
+    .pipe-step {
+      flex: 1;
+      text-align: center;
+      min-width: 110px;
+    }
+
+    .pipe-step-num {
+      font-family: var(--mono);
+      font-size: 11px;
+      background-color: var(--accent-blue);
+      color: var(--text-primary);
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto 8px;
+      font-weight: bold;
+    }
+
+    .pipe-step-label {
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--text-primary);
+      margin-bottom: 4px;
+    }
+
+    .pipe-step-desc {
+      font-size: 10px;
+      color: var(--text-muted);
+    }
+
+    .pipe-connector {
+      width: 24px;
+      height: 1px;
+      background-color: var(--border-color);
+      margin-bottom: 24px;
+    }
+
+    /* --- DATA COMPARATOR PANEL --- */
+    .compare-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      margin-top: 16px;
+    }
+
+    @media (max-width: 576px) {
+      .compare-row {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .comp-card {
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 8px;
+      padding: 24px;
+      background-color: var(--bg-secondary);
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      transition: transform 0.2s ease, border-color 0.2s ease;
+    }
+
+    .comp-card:hover {
+      transform: translateY(-2px);
+    }
+
+    .comp-card.winner {
+      border: 1px solid rgba(16, 185, 129, 0.25);
+      background-color: rgba(16, 185, 129, 0.02);
+      box-shadow: 0 0 15px rgba(16, 185, 129, 0.05);
+    }
+
+    .comp-card.loser {
+      border: 1px solid rgba(239, 68, 68, 0.25);
+      background-color: rgba(239, 68, 68, 0.02);
+      box-shadow: 0 0 15px rgba(239, 68, 68, 0.05);
+    }
+
+    .comp-card-hdr {
+      font-family: var(--mono);
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      margin-bottom: 16px;
+      letter-spacing: 0.05em;
+    }
+
+    .winner .comp-card-hdr {
+      color: #34d399;
+    }
+
+    .loser .comp-card-hdr {
+      color: #f87171;
+    }
+
+    .comp-stats {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      margin-bottom: 16px;
+    }
+
+    .comp-stat {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 13px;
+      color: var(--text-secondary);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+      padding-bottom: 8px;
+    }
+
+    .comp-stat:last-child {
+      border-bottom: none;
+      padding-bottom: 0;
+    }
+
+    .comp-val {
+      font-family: var(--mono);
+      font-weight: 600;
+      color: var(--text-primary);
+    }
+
+    .comp-status-badge {
+      font-family: var(--mono);
+      font-size: 11px;
+      font-weight: 700;
+      text-align: center;
+      padding: 6px;
+      border-radius: 4px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .winner .comp-status-badge {
+      background-color: rgba(16, 185, 129, 0.1);
+      color: #34d399;
+      border: 1px solid rgba(16, 185, 129, 0.2);
+    }
+
+    .loser .comp-status-badge {
+      background-color: rgba(239, 68, 68, 0.1);
+      color: #f87171;
+      border: 1px solid rgba(239, 68, 68, 0.2);
+    }
+
+    /* --- TABLES --- */
+    .table-container {
+      overflow-x: auto;
+      margin-top: 16px;
+      border: 1px solid var(--border-color);
+      border-radius: 6px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 11px;
+      text-align: left;
+    }
+
+    th {
+      font-family: var(--mono);
+      font-size: 10px;
+      color: var(--text-muted);
+      font-weight: 600;
+      text-transform: uppercase;
+      background-color: var(--bg-secondary);
+      padding: 10px 12px;
+      border-bottom: 1px solid var(--border-color);
+    }
+
+    td {
+      padding: 10px 12px;
+      border-bottom: 1px solid var(--border-color);
+      color: var(--text-secondary);
+      vertical-align: top;
+    }
+
+    tr:last-child td {
+      border-bottom: none;
+    }
+
+    tr:hover td {
+      color: var(--text-primary);
+      background-color: rgba(255, 255, 255, 0.01);
+    }
+
+    .mono-text {
+      font-family: var(--mono);
+    }
+
+    .tag {
+      font-family: var(--mono);
+      font-size: 9px;
+      padding: 2px 6px;
+      border-radius: 3px;
+      border: 1px solid;
+      display: inline-block;
+    }
+
+    .tag-green {
+      background-color: rgba(16, 185, 129, 0.1);
+      border-color: var(--accent-green);
+      color: var(--accent-green);
+    }
+
+    .tag-red {
+      background-color: rgba(239, 68, 68, 0.1);
+      border-color: var(--accent-red);
+      color: var(--accent-red);
+    }
+
+    .tag-amber {
+      background-color: rgba(245, 158, 11, 0.1);
+      border-color: var(--accent-amber);
+      color: var(--accent-amber);
+    }
+
+    /* --- PITCH CALLOUTS --- */
+    .callout-deck {
+      background-color: rgba(59, 130, 246, 0.05);
+      border: 1px solid var(--accent-blue);
+      border-radius: 6px;
+      padding: 16px;
+      margin: 20px 0;
+      font-size: 13px;
+      color: var(--text-primary);
+    }
+
+    /* --- FOOTER --- */
+    footer {
+      border-top: 1px solid var(--border-color);
+      padding: 40px 0;
+      margin-top: 64px;
+      font-family: var(--mono);
+      font-size: 11px;
+      color: var(--text-muted);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    footer a {
+      color: var(--accent-blue);
+      text-decoration: none;
+    }
+
+    /* --- RAW CONSOLE VIEW --- */
+    .raw-logs-container {
+      margin-top: 24px;
+      border: 1px solid var(--border-color);
+      border-radius: 6px;
+      overflow: hidden;
+    }
+
+    .raw-logs-hdr {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background-color: var(--bg-secondary);
+      border-bottom: 1px solid var(--border-color);
+      padding: 12px 16px;
+    }
+
+    pre.raw-code-box {
+      margin: 0;
+      background-color: #050811;
+      padding: 16px;
+      font-family: var(--mono);
+      font-size: 11px;
+      line-height: 1.6;
+      color: #93c5fd;
+      overflow-x: auto;
+      max-height: 320px;
+      white-space: pre-wrap;
+      word-break: break-all;
+    }
+    /* --- EXECUTION TRACE SYSTEM --- */
+    .execution-logs-list {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      margin-top: 24px;
+    }
+    .trace-card {
+      background-color: var(--card-bg);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 8px;
+      padding: 20px;
+      transition: border-color 0.2s ease, transform 0.2s ease;
+    }
+    .trace-card:hover {
+      border-color: var(--border-highlight);
+      transform: translateY(-1px);
+    }
+    .trace-hdr {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 12px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+      padding-bottom: 12px;
+      margin-bottom: 14px;
+    }
+    .trace-title {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .trace-title h3 {
+      font-family: var(--mono);
+      font-size: 13px;
+      color: var(--text-primary);
+      font-weight: 600;
+    }
+    .trace-meta {
+      display: flex;
+      gap: 12px;
+      align-items: center;
+    }
+    .trace-badge {
+      font-family: var(--sans);
+      font-size: 10px;
+      font-weight: 700;
+      padding: 3px 8px;
+      border-radius: 4px;
+      text-transform: uppercase;
+    }
+    .trace-badge.success {
+      background-color: rgba(16, 185, 129, 0.1);
+      color: #34d399;
+      border: 1px solid rgba(16, 185, 129, 0.2);
+    }
+    .trace-badge.recovered {
+      background-color: rgba(245, 158, 11, 0.1);
+      color: #fbbf24;
+      border: 1px solid rgba(245, 158, 11, 0.2);
+    }
+    .trace-timeline {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background-color: var(--bg-primary);
+      border: 1px solid rgba(255, 255, 255, 0.04);
+      padding: 10px 16px;
+      border-radius: 6px;
+      margin: 12px 0;
+      overflow-x: auto;
+      gap: 8px;
+    }
+    .timeline-node {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 11.5px;
+      font-family: var(--mono);
+      white-space: nowrap;
+    }
+    .timeline-label {
+      color: var(--text-muted);
+    }
+    .timeline-val {
+      color: var(--text-primary);
+      font-weight: 500;
+    }
+    .timeline-arrow {
+      color: var(--text-muted);
+      font-size: 10px;
+    }
+    .trace-metrics-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 16px;
+      font-size: 12px;
+      color: var(--text-secondary);
+      margin-top: 10px;
+    }
+    @media (max-width: 768px) {
+      .trace-metrics-grid {
+        grid-template-columns: 1fr 1fr;
+      }
+    }
+    .metric-item {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+    .metric-lbl {
+      font-size: 10px;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      font-family: var(--mono);
+    }
+    .metric-val {
+      font-family: var(--mono);
+      color: var(--text-primary);
+      font-weight: 500;
+    }
+    .recovery-callout {
+      margin-top: 12px;
+      padding: 10px 14px;
+      background-color: rgba(245, 158, 11, 0.04);
+      border-left: 3px solid var(--accent-amber);
+      border-radius: 4px;
+      font-size: 12.5px;
+      line-height: 1.5;
+    }
+    .recovery-callout strong {
+      color: var(--accent-amber);
+    }
+  </style>
+</head>
+
+<body>
+
+  <header>
+    <div class="container">
+      <div class="hero-eyebrow">Technical Specification & System Design</div>
+      <h1>AutoLand: Intelligent Solana Transaction Stack</h1>
+      <p class="hero-subtitle">
+        A developer-focused transaction execution stack SDK for Solana. It is built to ensure hyper-reliable,
+        cost-effective transaction landing on highly contested block space, utilizing Jito bundles, Yellowstone gRPC
+        streams, and autonomous AI-driven recovery.
+      </p>
+      <div class="metadata-bar">
+        <span class="meta-tag">@autoland/dlmm-bot</span>
+        <span class="meta-tag">Core: @autoland/core</span>
+        <span class="meta-tag">Specs: v1.2.0</span>
+        <span class="meta-tag">Ecosystem: Jito Bundles / Yellowstone gRPC</span>
+      </div>
+    </div>
+  </header>
+
+  <div class="toc-bar">
+    <div class="container">
+      <ul class="toc-links">
+        <li><a href="#problem">1. The Problem</a></li>
+        <li><a href="#jito-auction">2. Jito Auction Model</a></li>
+        <li><a href="#approach">3. Our Solution</a></li>
+        <li><a href="#pipelines">4. Core Pipelines</a></li>
+        <li><a href="#submissions">5. Operational Submissions</a></li>
+        <li><a href="#insights">6. Operational Q&amp;A</a></li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="container">
+
+    <!-- SECTION 1: THE PROBLEM -->
+    <section class="section" id="problem">
+      <div class="section-num">Section 01</div>
+      <h2>Technical Context: How Jito and Writable Accounts Work</h2>
+      <div class="section-desc">
+        Solana's parallel engine handles separate state paths, but execution clashes when transactions compete to write
+        to the same account. Jito coordinates this off-chain using the following steps:
+      </div>
+
+      <div class="story-grid">
+        <div class="story-card">
+          <div class="story-card-hdr">
+            <span class="story-card-num">01</span>
+            <h3>Bundle Account Locking</h3>
+          </div>
+          <p>
+            Jito's <code>BundleAccountLocker</code> analyzes incoming bundle payloads to extract and lock the combined
+            read/write accounts required by all transactions, securing exclusive, block-wide atomicity.
+          </p>
+        </div>
+
+        <div class="story-card">
+          <div class="story-card-hdr">
+            <span class="story-card-num">02</span>
+            <h3>Conflict Set Grouping</h3>
+          </div>
+          <p>
+            Bundles requesting overlapping locks (e.g. trading bots competing for the same DLMM pool, token launch pool,
+            or liquidating account) are isolated together into a <code>Conflict Set</code>.
+          </p>
+        </div>
+
+        <div class="story-card">
+          <div class="story-card-hdr">
+            <span class="story-card-num">03</span>
+            <h3>Localized Auctions</h3>
+          </div>
+          <p>
+            Since only one conflict bundle can execute sequentially, Jito runs a localized priority auction. Bundles are
+            ranked by their <code>Priority Score</code>; the highest score lands, while conflicting underbids are
+            dropped.
+          </p>
+        </div>
+      </div>
+
+      <div class="diag-box">
+        <div class="diag-box-title">Visualizing the Conflict Set Grouping Path</div>
+        <svg class="svg-diag" viewBox="0 0 800 240" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <!-- Background Grid lines -->
+          <line x1="100" y1="20" x2="100" y2="220" stroke="#1d253f" stroke-dasharray="4 4" />
+          <line x1="400" y1="20" x2="400" y2="220" stroke="#1d253f" stroke-dasharray="4 4" />
+          <line x1="700" y1="20" x2="700" y2="220" stroke="#1d253f" stroke-dasharray="4 4" />
+
+          <!-- Conflicting Transactions -->
+          <rect x="20" y="30" width="180" height="40" rx="4" fill="#0d1220" stroke="#1d253f" />
+          <text x="30" y="55" fill="#f8fafc" font-family="monospace" font-size="11">Tx 1 (Rebalance)</text>
+
+          <rect x="20" y="80" width="180" height="40" rx="4" fill="#0d1220" stroke="#1d253f" />
+          <text x="30" y="105" fill="#f8fafc" font-family="monospace" font-size="11">Tx 2 (Arb Competitor)</text>
+
+          <rect x="20" y="130" width="180" height="40" rx="4" fill="#0d1220" stroke="#1d253f" />
+          <text x="30" y="155" fill="#f8fafc" font-family="monospace" font-size="11">Tx 3 (Swapper)</text>
+
+          <!-- Arrows to Jito conflict set -->
+          <path d="M210 50 H360" stroke="#64748b" stroke-width="1.5" stroke-dasharray="2 2" />
+          <path d="M210 100 H360" stroke="#64748b" stroke-width="1.5" stroke-dasharray="2 2" />
+          <path d="M210 150 H360" stroke="#64748b" stroke-width="1.5" stroke-dasharray="2 2" />
+          <polygon points="360,47 360,53 365,50" fill="#64748b" />
+          <polygon points="360,97 360,103 365,100" fill="#64748b" />
+          <polygon points="360,147 360,153 365,150" fill="#64748b" />
+
+          <!-- Jito Block Engine Conflict Set Bin -->
+          <rect x="380" y="25" width="220" height="180" rx="6" fill="#12182c" stroke="#3b82f6" stroke-width="1.5" />
+          <text x="400" y="50" fill="#3b82f6" font-family="monospace" font-size="11" font-weight="bold">JITO CONFLICT
+            SET</text>
+          <text x="400" y="80" fill="#94a3b8" font-family="sans-serif" font-size="11">Account Write-Lock:</text>
+          <text x="400" y="100" fill="#f8fafc" font-family="monospace" font-size="10" bg="#070b13">WORLDCUP_SOL
+            Pool</text>
+
+          <rect x="395" y="130" width="190" height="30" rx="3" fill="#070b13" stroke="#1d253f" />
+          <text x="405" y="148" fill="#fbbf24" font-family="monospace" font-size="10">Runs Off-chain Auction</text>
+
+          <!-- Final Land Arrow -->
+          <path d="M610 115 H710" stroke="#10b981" stroke-width="2" />
+          <polygon points="710,111 710,119 717,115" fill="#10b981" />
+
+          <!-- Validator Box -->
+          <rect x="730" y="90" width="60" height="50" rx="4" fill="#064e3b" stroke="#10b981" />
+          <text x="742" y="120" fill="#34d399" font-family="monospace" font-size="11" font-weight="bold">BLOCK</text>
+        </svg>
+      </div>
+
+      <div class="callout-deck">
+        <strong>Key Insight:</strong> Standard RPC submission broadcasting to public mempools leaves your transactions
+        open to sandwich attacks and leader-level sorting drops. AutoLand routes bypass this entirely via private Jito
+        channels.
+      </div>
+    </section>
+
+    <!-- SECTION 2: JITO AUCTION MODEL -->
+    <section class="section" id="jito-auction">
+      <div class="section-num">Section 02</div>
+      <h2>The Jito Auction Model: Denominator Optimization</h2>
+      <div class="section-desc">
+        Inside a Jito Conflict Set, bundles are sorted using a structured <strong
+          style="color: var(--text-primary)">Priority Score</strong> (effective tip density per compute unit requested)
+        rather than absolute tip values:
+      </div>
+
+      <div class="formula-box">
+        Priority Score = Total Jito Tip (lamports) ÷ Sum of Compute Units Requested (CUs)
+      </div>
+
+      <div class="compare-row">
+        <div class="comp-card winner">
+          <div class="comp-card-hdr">Transaction A (AutoLand Optimized)</div>
+          <div class="comp-stats">
+            <div class="comp-stat">Requested Compute: <span class="comp-val">50,000 CUs</span></div>
+            <div class="comp-stat">Jito Tip: <span class="comp-val">5,000,000 lamports (0.005 SOL)</span></div>
+            <div class="comp-stat">Effective Priority Score: <span class="comp-val"
+                style="color: var(--accent-green);">100 lamports/CU</span></div>
+          </div>
+          <div class="comp-status-badge">STATUS: LANDED FIRST</div>
+        </div>
+
+        <div class="comp-card loser">
+          <div class="comp-card-hdr">Transaction B (Default Unoptimized)</div>
+          <div class="comp-stats">
+            <div class="comp-stat">Requested Compute: <span class="comp-val">1,400,000 CUs (Default)</span></div>
+            <div class="comp-stat">Jito Tip: <span class="comp-val">70,000,000 lamports (0.070 SOL)</span></div>
+            <div class="comp-stat">Effective Priority Score: <span class="comp-val" style="color: var(--accent-red);">50
+                lamports/CU</span></div>
+          </div>
+          <div class="comp-status-badge">STATUS: DROPPED / OUTBID</div>
+        </div>
+      </div>
+
+      <p style="font-size: 13.5px; color: var(--text-secondary); margin-top: 16px; line-height: 1.6;">
+        Because Transaction B requested standard unoptimized CUs, its priority density is halved despite paying a
+        <strong style="color: var(--text-primary)">14x higher absolute tip</strong>. AutoLand's CU resizing directly
+        optimizes this denominator to win auctions cost-efficiently.
+      </p>
+    </section>
+
+    <!-- SECTION 3: OUR SOLUTION -->
+    <section class="section" id="approach">
+      <div class="section-num">Section 03</div>
+      <h2>Our Solution: Real-Time Contention Engine</h2>
+      <div class="section-desc">
+        AutoLand builds an active bidding profile for target accounts by parsing live gRPC transaction streams, scaling
+        tips to outbid competitors during fee wars and falling back to global Jito fee percentiles (p50/p90/p99) when
+        quiet.
+      </div>
+
+      <div class="diag-box">
+        <div class="diag-box-title">Dynamic Telemetry Bidding & Execution System</div>
+        <svg class="svg-diag" viewBox="0 0 800 220" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <!-- Blocks -->
+          <rect x="20" y="60" width="160" height="80" rx="6" fill="#0d1220" stroke="#1d253f" />
+          <text x="35" y="95" fill="#f8fafc" font-family="sans-serif" font-size="11" font-weight="bold">Yellowstone
+            gRPC</text>
+          <text x="35" y="115" fill="#94a3b8" font-family="monospace" font-size="10">Target Account Stream</text>
+
+          <!-- Arrow with text -->
+          <path d="M190 100 H330" stroke="#3b82f6" stroke-width="1.5" />
+          <polygon points="330,96 330,104 337,100" fill="#3b82f6" />
+          <text x="200" y="90" fill="#64748b" font-family="sans-serif" font-size="10">Sub-100ms Telemetry</text>
+
+          <!-- Core SDK Analyzer -->
+          <rect x="350" y="40" width="180" height="120" rx="6" fill="#12182c" stroke="#3b82f6" stroke-width="1.5" />
+          <text x="365" y="70" fill="#3b82f6" font-family="monospace" font-size="11" font-weight="bold">AutoLand Core
+            SDK</text>
+          <text x="365" y="95" fill="#94a3b8" font-family="sans-serif" font-size="11">Competitor Tip Profile</text>
+          <text x="365" y="115" fill="#f8fafc" font-family="monospace" font-size="10">Dynamic Tip Calculation</text>
+          <text x="365" y="135" fill="#10b981" font-family="monospace" font-size="10">Pre-flight CU Resizing</text>
+
+          <!-- Arrow with text -->
+          <path d="M540 100 H670" stroke="#10b981" stroke-width="1.5" />
+          <polygon points="670,96 670,104 677,100" fill="#10b981" />
+          <text x="550" y="90" fill="#64748b" font-family="sans-serif" font-size="10">Jito Bundle</text>
+
+          <!-- Jito Regional block engines -->
+          <rect x="690" y="60" width="90" height="80" rx="6" fill="#064e3b" stroke="#10b981" />
+          <text x="705" y="95" fill="#34d399" font-family="sans-serif" font-size="11" font-weight="bold">Jito
+            Leader</text>
+          <text x="705" y="115" fill="#a7f3d0" font-family="monospace" font-size="10">Execution</text>
+        </svg>
+      </div>
+
+      <div class="grid-2">
+        <div class="deck-card">
+          <h3>1. Telemetry Stream</h3>
+          <p>Establishes a live Yellowstone gRPC subscription that pushes every transaction writing to the target
+            account. This enables instantaneous competition mapping.</p>
+        </div>
+
+        <div class="deck-card">
+          <h3>2. CU Resizing</h3>
+          <p>Runs local pre-flight simulations. Replaces default compute unit request envelopes with actual consumption
+            parameters (+10% safety margin).</p>
+        </div>
+
+        <div class="deck-card">
+          <h3>3. Dual-Tiered Bidding</h3>
+          <p>Under active pool contention, scales the Jito tip to outbid competitor rates. Reverts automatically to
+            baseline global percentiles when the pool is quiet.</p>
+        </div>
+
+        <div class="deck-card">
+          <h3>4. LLM Advisor</h3>
+          <p>A closed-loop diagnostic engine (compatible with any fast LLM endpoint) that resolves drops, stale
+            blockhashes, and rejections within strict programmatic safety caps.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- SECTION 4: CORE PIPELINES -->
+    <section class="section" id="pipelines">
+      <div class="section-num">Section 04</div>
+      <h2>Core System Pipelines</h2>
+      <div class="section-desc">
+        How transactions are optimized and dispatched by the core modules of `@autoland/core`.
+      </div>
+
+      <div class="diag-box">
+        <div class="diag-box-title">Full System Architecture & Inter-Service Data Flow</div>
+        <svg class="svg-diag" viewBox="0 0 800 360" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <!-- Background Grid lines -->
+          <line x1="100" y1="20" x2="100" y2="340" stroke="#1d253f" stroke-dasharray="4 4" />
+          <line x1="400" y1="20" x2="400" y2="340" stroke="#1d253f" stroke-dasharray="4 4" />
+          <line x1="700" y1="20" x2="700" y2="340" stroke="#1d253f" stroke-dasharray="4 4" />
+
+          <!-- Client App Node -->
+          <rect x="30" y="30" width="180" height="50" rx="4" fill="#0d1220" stroke="#1d253f" />
+          <text x="45" y="52" fill="#f8fafc" font-family="sans-serif" font-size="11" font-weight="bold">Client
+            Application</text>
+          <text x="45" y="68" fill="#94a3b8" font-family="monospace" font-size="9">@autoland/dlmm-bot</text>
+
+          <!-- Core SDK Node -->
+          <rect x="300" y="100" width="200" height="100" rx="6" fill="#12182c" stroke="#3b82f6" stroke-width="1.5" />
+          <text x="315" y="125" fill="#3b82f6" font-family="monospace" font-size="12" font-weight="bold">AutoLand Core
+            SDK</text>
+          <text x="315" y="148" fill="#94a3b8" font-family="sans-serif" font-size="10">Telemetry Oracle,
+            Dispatcher,</text>
+          <text x="315" y="165" fill="#94a3b8" font-family="sans-serif" font-size="10">and Lifecycle Tracker</text>
+
+          <!-- Yellowstone gRPC Node -->
+          <rect x="30" y="120" width="180" height="60" rx="4" fill="#0d1220" stroke="#14b8a6" />
+          <text x="45" y="142" fill="#14b8a6" font-family="sans-serif" font-size="11" font-weight="bold">Yellowstone
+            gRPC</text>
+          <text x="45" y="160" fill="#94a3b8" font-family="monospace" font-size="9">Live Block & Account Stream</text>
+
+          <!-- RPC Node -->
+          <rect x="310" y="15" width="180" height="50" rx="4" fill="#0d1220" stroke="#8b5cf6" />
+          <text x="325" y="38" fill="#a78bfa" font-family="sans-serif" font-size="11" font-weight="bold">Premium RPC
+            Node</text>
+          <text x="325" y="52" fill="#64748b" font-family="monospace" font-size="9">Pre-flight simulateBundle()</text>
+
+          <!-- Jito Block Engine -->
+          <rect x="580" y="120" width="180" height="60" rx="4" fill="#0d1220" stroke="#10b981" />
+          <text x="595" y="142" fill="#10b981" font-family="sans-serif" font-size="11" font-weight="bold">Jito Block
+            Engine</text>
+          <text x="595" y="160" fill="#94a3b8" font-family="monospace" font-size="9">Regional Dispatch</text>
+
+          <!-- SQLite DB -->
+          <rect x="310" y="275" width="180" height="50" rx="4" fill="#0d1220" stroke="#1d253f" />
+          <text x="325" y="298" fill="#f8fafc" font-family="sans-serif" font-size="11" font-weight="bold">SQLite Log
+            Database</text>
+          <text x="325" y="312" fill="#64748b" font-family="monospace" font-size="9">Lifecycle progression log</text>
+
+          <!-- AI Diagnostics Node -->
+          <rect x="30" y="270" width="180" height="60" rx="4" fill="#0d1220" stroke="#ef4444" />
+          <text x="45" y="292" fill="#ef4444" font-family="sans-serif" font-size="11" font-weight="bold">AI Advisor
+            Heuristics</text>
+          <text x="45" y="310" fill="#94a3b8" font-family="monospace" font-size="9">Closed-loop diagnostics</text>
+
+          <!-- Arrows & Connections -->
+          <!-- Client -> SDK -->
+          <path d="M120 80 V110 H300" stroke="#64748b" stroke-width="1.5" stroke-dasharray="2 2" />
+          <polygon points="300,107 300,113 305,110" fill="#64748b" />
+          <text x="140" y="102" fill="#64748b" font-family="sans-serif" font-size="9">Submit Tx & Register</text>
+
+          <!-- Yellowstone -> SDK -->
+          <path d="M210 150 H300" stroke="#14b8a6" stroke-width="1.5" />
+          <polygon points="300,147 300,153 305,150" fill="#14b8a6" />
+          <text x="215" y="142" fill="#64748b" font-family="sans-serif" font-size="9">Contention updates</text>
+
+          <!-- SDK <-> RPC -->
+          <path d="M400 100 V65" stroke="#8b5cf6" stroke-width="1.5" />
+          <polygon points="397,65 403,65 400,60" fill="#8b5cf6" />
+          <text x="408" y="85" fill="#64748b" font-family="sans-serif" font-size="9">Simulation CUs</text>
+
+          <!-- SDK -> Jito -->
+          <path d="M500 150 H580" stroke="#10b981" stroke-width="1.5" />
+          <polygon points="580,147 580,153 585,150" fill="#10b981" />
+          <text x="510" y="142" fill="#64748b" font-family="sans-serif" font-size="9">Jito bundle</text>
+
+          <!-- SDK -> SQLite -->
+          <path d="M400 200 V275" stroke="#64748b" stroke-width="1.5" />
+          <polygon points="397,275 403,275 400,280" fill="#64748b" />
+
+          <!-- SQLite -> AI -->
+          <path d="M310 300 H210" stroke="#64748b" stroke-width="1.5" stroke-dasharray="2 2" />
+          <polygon points="210,297 210,303 205,300" fill="#64748b" />
+          <text x="220" y="292" fill="#64748b" font-family="sans-serif" font-size="9">read_session_memory</text>
+
+          <!-- AI -> SDK -->
+          <path d="M120 270 V230 H300 V200" stroke="#ef4444" stroke-width="1.5" />
+          <polygon points="297,200 303,200 300,195" fill="#ef4444" />
+          <text x="170" y="222" fill="#64748b" font-family="sans-serif" font-size="9">Recovery mutations</text>
+        </svg>
+      </div>
+
+      <div class="diag-box">
+        <div class="diag-box-title">Compute Unit Resizing Optimization Pipeline</div>
+        <div class="pipeline-timeline">
+          <div class="pipe-step">
+            <div class="pipe-step-num">1</div>
+            <div class="pipe-step-label">Compile</div>
+            <div class="pipe-step-desc">Construct tx payloads</div>
+          </div>
+          <div class="pipe-connector"></div>
+          <div class="pipe-step">
+            <div class="pipe-step-num">2</div>
+            <div class="pipe-step-label">Simulate</div>
+            <div class="pipe-step-desc">Local RPC pre-flight</div>
+          </div>
+          <div class="pipe-connector"></div>
+          <div class="pipe-step">
+            <div class="pipe-step-num">3</div>
+            <div class="pipe-step-label">Parse</div>
+            <div class="pipe-step-desc">Extract CUs consumed</div>
+          </div>
+          <div class="pipe-connector"></div>
+          <div class="pipe-step">
+            <div class="pipe-step-num">4</div>
+            <div class="pipe-step-label">Resize</div>
+            <div class="pipe-step-desc">Set limit + 10% buffer</div>
+          </div>
+          <div class="pipe-connector"></div>
+          <div class="pipe-step">
+            <div class="pipe-step-num">5</div>
+            <div class="pipe-step-label">Dispatch</div>
+            <div class="pipe-step-desc">Sign & Jito submit</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="diag-box">
+        <div class="diag-box-title">AI Heuristics & Diagnostics Loop</div>
+        <svg class="svg-diag" viewBox="0 0 800 200" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <!-- State: Drop Detected -->
+          <rect x="20" y="70" width="130" height="60" rx="4" fill="#0d1220" stroke="#ef4444" />
+          <text x="35" y="95" fill="#f8fafc" font-family="sans-serif" font-size="11"
+            font-weight="bold">Drop/Timeout</text>
+          <text x="35" y="112" fill="#ef4444" font-family="monospace" font-size="9">Jito Result Stream</text>
+
+          <!-- Arrow -->
+          <path d="M160 100 H230" stroke="#3b82f6" stroke-width="1.5" />
+          <polygon points="230,96 230,104 237,100" fill="#3b82f6" />
+
+          <!-- AI Advisor Analyzer -->
+          <rect x="250" y="45" width="180" height="110" rx="6" fill="#12182c" stroke="#3b82f6" stroke-width="1.5" />
+          <text x="265" y="65" fill="#3b82f6" font-family="sans-serif" font-size="11" font-weight="bold">AI Advisor
+            Diagnostics</text>
+          <text x="265" y="85" fill="#64748b" font-family="monospace" font-size="9">Tools: get_recent_lifecycles</text>
+          <text x="265" y="100" fill="#64748b" font-family="monospace" font-size="9">Tools: get_tip_percentile_info</text>
+          <text x="265" y="122" fill="#a78bfa" font-family="monospace" font-size="9" font-weight="bold">Output Action Params:</text>
+          <text x="265" y="137" fill="#10b981" font-family="monospace" font-size="9">refresh_blockhash: true</text>
+
+          <!-- Arrow -->
+          <path d="M440 100 H510" stroke="#3b82f6" stroke-width="1.5" />
+          <polygon points="510,96 510,104 517,100" fill="#3b82f6" />
+
+          <!-- Programmatic Safety Gate -->
+          <rect x="530" y="60" width="110" height="80" rx="4" fill="#0d1220" stroke="#f59e0b" />
+          <text x="545" y="85" fill="#f59e0b" font-family="sans-serif" font-size="11" font-weight="bold">Safety
+            Vault</text>
+          <text x="545" y="105" fill="#94a3b8" font-family="sans-serif" font-size="10">Max Tip check</text>
+          <text x="545" y="120" fill="#94a3b8" font-family="sans-serif" font-size="10">Slippage check</text>
+
+          <!-- Arrow -->
+          <path d="M650 100 H710" stroke="#10b981" stroke-width="1.5" />
+          <polygon points="710,96 710,104 717,100" fill="#10b981" />
+
+          <!-- Landed Retry -->
+          <rect x="730" y="70" width="50" height="60" rx="4" fill="#064e3b" stroke="#10b981" />
+          <text x="742" y="105" fill="#34d399" font-family="sans-serif" font-size="11" font-weight="bold">Retry</text>
+        </svg>
+      </div>
+    </section>
+
+    <!-- SECTION 5: LIFECYCLE LOGS -->
+    <section class="section" id="submissions">
+      <div class="section-num">Section 05</div>
+      <h2>Submissions &amp; Operational Findings</h2>
+      <div class="section-desc">
+        A summary of 10 real Jito bundle submissions verified from the running SQLite store. Slot heights and
+        transaction signatures can be cross-referenced on Solana explorers.
+      </div>
+
+      <div class="execution-logs-list">
+        <!-- Entry 01 -->
+        <div class="trace-card">
+          <div class="trace-hdr">
+            <div class="trace-title">
+              <span style="color: var(--accent-blue); font-family: var(--mono); font-size: 11px; font-weight: bold;">[ENTRY 01]</span>
+              <h3>Bundle 82de89b4b61c088ce08137818628d924d088f6e9dc09be457fc6c408449fefc4</h3>
+            </div>
+            <div class="trace-meta">
+              <span class="trace-badge success">Finalized</span>
+            </div>
+          </div>
+          <div class="trace-timeline">
+            <div class="timeline-node"><span class="timeline-label">Sub</span> <span class="timeline-val">429341336</span></div>
+            <div class="timeline-arrow">➔</div>
+            <div class="timeline-node"><span class="timeline-label">Proc</span> <span class="timeline-val">429341349</span></div>
+            <div class="timeline-arrow">➔</div>
+            <div class="timeline-node"><span class="timeline-label">Conf</span> <span class="timeline-val">429341349</span></div>
+            <div class="timeline-arrow">➔</div>
+            <div class="timeline-node"><span class="timeline-label">Final</span> <span class="timeline-val">429341349</span></div>
+          </div>
+          <div class="trace-metrics-grid">
+            <div class="metric-item"><span class="metric-lbl">Tip Paid</span><span class="metric-val">6,851,610 lamports</span></div>
+            <div class="metric-item"><span class="metric-lbl">Attempt</span><span class="metric-val">1</span></div>
+            <div class="metric-item"><span class="metric-lbl">Operation</span><span class="metric-val">Meteora Remove Liquidity & Other & Meteora Add Liquidity</span></div>
+            <div class="metric-item"><span class="metric-lbl">Confirmation</span><span class="metric-val">Jito Stream</span></div>
+          </div>
+          <div style="margin-top: 14px; border-top: 1px dashed rgba(255,255,255,0.06); padding-top: 12px;">
+            <span class="metric-lbl" style="display: block; margin-bottom: 6px;">Signatures & Explorer Links</span>
+            <div style="display: flex; flex-direction: column; gap: 6px;">
+              <div style="display: flex; justify-content: space-between; align-items: center; background-color: var(--bg-primary); padding: 6px 12px; border-radius: 4px; border: 1px solid rgba(255, 255, 255, 0.02);">
+                <code style="font-family: var(--mono); font-size: 10.5px; color: var(--text-secondary); word-break: break-all;">3s48PtttU1wuBu3msbq8WABBDsViEcAiCypswfH8nLcd3NiJ9eosSbNm7AxbAEiooKqPKB1T4BQHizkZ2VBHnbsZ</code>
+                <a href="https://solscan.io/tx/3s48PtttU1wuBu3msbq8WABBDsViEcAiCypswfH8nLcd3NiJ9eosSbNm7AxbAEiooKqPKB1T4BQHizkZ2VBHnbsZ" target="_blank" style="font-family: var(--mono); font-size: 10px; color: var(--accent-blue); text-decoration: none; margin-left: 12px; white-space: nowrap;">Solscan ↗</a>
+              </div>
+              <div style="display: flex; justify-content: space-between; align-items: center; background-color: var(--bg-primary); padding: 6px 12px; border-radius: 4px; border: 1px solid rgba(255, 255, 255, 0.02);">
+                <code style="font-family: var(--mono); font-size: 10.5px; color: var(--text-secondary); word-break: break-all;">4NKTCrZeXNc3zAWn8s1f7LaxPDkgbiAWuto9QiiqYwyK4i7oBfsLjsvSADxbCmHsPskdvPJL4LBDjkyKUp7m3jmY</code>
+                <a href="https://solscan.io/tx/4NKTCrZeXNc3zAWn8s1f7LaxPDkgbiAWuto9QiiqYwyK4i7oBfsLjsvSADxbCmHsPskdvPJL4LBDjkyKUp7m3jmY" target="_blank" style="font-family: var(--mono); font-size: 10px; color: var(--accent-blue); text-decoration: none; margin-left: 12px; white-space: nowrap;">Solscan ↗</a>
+              </div>
+              <div style="display: flex; justify-content: space-between; align-items: center; background-color: var(--bg-primary); padding: 6px 12px; border-radius: 4px; border: 1px solid rgba(255, 255, 255, 0.02);">
+                <code style="font-family: var(--mono); font-size: 10.5px; color: var(--text-secondary); word-break: break-all;">4pa2FYcgAcM4pQTGtAYFgpksN86U5LEJvoSrKs2BrNKui6vL7ik5ae3oue952EHm7Zx95KrMx2wtBZNpJGbLra5e</code>
+                <a href="https://solscan.io/tx/4pa2FYcgAcM4pQTGtAYFgpksN86U5LEJvoSrKs2BrNKui6vL7ik5ae3oue952EHm7Zx95KrMx2wtBZNpJGbLra5e" target="_blank" style="font-family: var(--mono); font-size: 10px; color: var(--accent-blue); text-decoration: none; margin-left: 12px; white-space: nowrap;">Solscan ↗</a>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Entry 02 -->
+        <div class="trace-card">
+          <div class="trace-hdr">
+            <div class="trace-title">
+              <span style="color: var(--accent-amber); font-family: var(--mono); font-size: 11px; font-weight: bold;">[ENTRY 02]</span>
+              <h3>Bundle 4858d2377ff9b7b621307c6ab0ab35e475dbbf81af3fd68237a42d19949a22ef</h3>
+            </div>
+            <div class="trace-meta">
+              <span class="trace-badge recovered">AI Recovered</span>
+            </div>
+          </div>
+          <div class="trace-timeline">
+            <div class="timeline-node"><span class="timeline-label">Sub</span> <span class="timeline-val">429331685</span></div>
+            <div class="timeline-arrow">➔</div>
+            <div class="timeline-node"><span class="timeline-label">Proc</span> <span class="timeline-val">429331836</span></div>
+            <div class="timeline-arrow">➔</div>
+            <div class="timeline-node"><span class="timeline-label">Conf</span> <span class="timeline-val">429331836</span></div>
+            <div class="timeline-arrow">➔</div>
+            <div class="timeline-node"><span class="timeline-label">Final</span> <span class="timeline-val">429331836</span></div>
+          </div>
+          <div class="trace-metrics-grid">
+            <div class="metric-item"><span class="metric-lbl">Tip Paid</span><span class="metric-val">15,000 lamports</span></div>
+            <div class="metric-item"><span class="metric-lbl">Attempt</span><span class="metric-val">3 (AI Retried)</span></div>
+            <div class="metric-item"><span class="metric-lbl">Operation</span><span class="metric-val">Meteora Remove Liquidity</span></div>
+            <div class="metric-item"><span class="metric-lbl">Confirmation</span><span class="metric-val">Jito Stream</span></div>
+          </div>
+          <div class="recovery-callout">
+            <strong>AI Diagnostics & Action:</strong> Attempt 1 failed due to <code>TIMEOUT</code> (Blockhash expired or Jito fee war.). The AI Advisor recovered by refreshing blockhash parameters and outbidding competitors to finalize successfully.
+          </div>
+          <div style="margin-top: 14px; border-top: 1px dashed rgba(255,255,255,0.06); padding-top: 12px;">
+            <span class="metric-lbl" style="display: block; margin-bottom: 6px;">Signatures & Explorer Links</span>
+            <div style="display: flex; flex-direction: column; gap: 6px;">
+              <div style="display: flex; justify-content: space-between; align-items: center; background-color: var(--bg-primary); padding: 6px 12px; border-radius: 4px; border: 1px solid rgba(255, 255, 255, 0.02);">
+                <code style="font-family: var(--mono); font-size: 10.5px; color: var(--text-secondary); word-break: break-all;">5tNGQ1tzy3BTwx7rG3qyXQeK5a5jDqMuDXTRS4cYktUzWiXMYGcSAaNmPxwqJdDTvviLWk678sXryGvphphAPqxC</code>
+                <a href="https://solscan.io/tx/5tNGQ1tzy3BTwx7rG3qyXQeK5a5jDqMuDXTRS4cYktUzWiXMYGcSAaNmPxwqJdDTvviLWk678sXryGvphphAPqxC" target="_blank" style="font-family: var(--mono); font-size: 10px; color: var(--accent-blue); text-decoration: none; margin-left: 12px; white-space: nowrap;">Solscan ↗</a>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Entry 03 -->
+        <div class="trace-card">
+          <div class="trace-hdr">
+            <div class="trace-title">
+              <span style="color: var(--accent-blue); font-family: var(--mono); font-size: 11px; font-weight: bold;">[ENTRY 03]</span>
+              <h3>Bundle 96b8c42cfc5105edb8abad9a923f5c620e368a2c67daac5c0f1376c9c8337146</h3>
+            </div>
+            <div class="trace-meta">
+              <span class="trace-badge success">Finalized</span>
+            </div>
+          </div>
+          <div class="trace-timeline">
+            <div class="timeline-node"><span class="timeline-label">Sub</span> <span class="timeline-val">429055156</span></div>
+            <div class="timeline-arrow">➔</div>
+            <div class="timeline-node"><span class="timeline-label">Proc</span> <span class="timeline-val">429055162</span></div>
+            <div class="timeline-arrow">➔</div>
+            <div class="timeline-node"><span class="timeline-label">Conf</span> <span class="timeline-val">429055162</span></div>
+            <div class="timeline-arrow">➔</div>
+            <div class="timeline-node"><span class="timeline-label">Final</span> <span class="timeline-val">429055162</span></div>
+          </div>
+          <div class="trace-metrics-grid">
+            <div class="metric-item"><span class="metric-lbl">Tip Paid</span><span class="metric-val">11,588,776 lamports</span></div>
+            <div class="metric-item"><span class="metric-lbl">Attempt</span><span class="metric-val">1</span></div>
+            <div class="metric-item"><span class="metric-lbl">Operation</span><span class="metric-val">Meteora Remove Liquidity & Other & Meteora Add Liquidity</span></div>
+            <div class="metric-item"><span class="metric-lbl">Confirmation</span><span class="metric-val">Jito Stream</span></div>
+          </div>
+          <div style="margin-top: 14px; border-top: 1px dashed rgba(255,255,255,0.06); padding-top: 12px;">
+            <span class="metric-lbl" style="display: block; margin-bottom: 6px;">Signatures & Explorer Links</span>
+            <div style="display: flex; flex-direction: column; gap: 6px;">
+              <div style="display: flex; justify-content: space-between; align-items: center; background-color: var(--bg-primary); padding: 6px 12px; border-radius: 4px; border: 1px solid rgba(255, 255, 255, 0.02);">
+                <code style="font-family: var(--mono); font-size: 10.5px; color: var(--text-secondary); word-break: break-all;">2FLUzdtGxE7EVcgDHAWtsn2ziTu6EYTNg6p2hEKZbqacog39uBd1xTRrLivepGdRe1BnBCwgzCksQYFtPVR6mHCY</code>
+                <a href="https://solscan.io/tx/2FLUzdtGxE7EVcgDHAWtsn2ziTu6EYTNg6p2hEKZbqacog39uBd1xTRrLivepGdRe1BnBCwgzCksQYFtPVR6mHCY" target="_blank" style="font-family: var(--mono); font-size: 10px; color: var(--accent-blue); text-decoration: none; margin-left: 12px; white-space: nowrap;">Solscan ↗</a>
+              </div>
+              <div style="display: flex; justify-content: space-between; align-items: center; background-color: var(--bg-primary); padding: 6px 12px; border-radius: 4px; border: 1px solid rgba(255, 255, 255, 0.02);">
+                <code style="font-family: var(--mono); font-size: 10.5px; color: var(--text-secondary); word-break: break-all;">54r4SoHmybzaqzAjbHkKq8tLQSXrnJeQLBsQPbtErZmptJH6NLkrgaseksjvvejQEJrqJaBiq7rnKEtecyESFPCP</code>
+                <a href="https://solscan.io/tx/54r4SoHmybzaqzAjbHkKq8tLQSXrnJeQLBsQPbtErZmptJH6NLkrgaseksjvvejQEJrqJaBiq7rnKEtecyESFPCP" target="_blank" style="font-family: var(--mono); font-size: 10px; color: var(--accent-blue); text-decoration: none; margin-left: 12px; white-space: nowrap;">Solscan ↗</a>
+              </div>
+              <div style="display: flex; justify-content: space-between; align-items: center; background-color: var(--bg-primary); padding: 6px 12px; border-radius: 4px; border: 1px solid rgba(255, 255, 255, 0.02);">
+                <code style="font-family: var(--mono); font-size: 10.5px; color: var(--text-secondary); word-break: break-all;">5tte7g5hmrXnPSVJTxVo6aMa68cap1SdPgJddJ4d3BGJUnno8xMzKisANiBaL7eMeZKTPJoA4sGEMvrZoGyHP8kS</code>
+                <a href="https://solscan.io/tx/5tte7g5hmrXnPSVJTxVo6aMa68cap1SdPgJddJ4d3BGJUnno8xMzKisANiBaL7eMeZKTPJoA4sGEMvrZoGyHP8kS" target="_blank" style="font-family: var(--mono); font-size: 10px; color: var(--accent-blue); text-decoration: none; margin-left: 12px; white-space: nowrap;">Solscan ↗</a>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Entry 04 -->
+        <div class="trace-card">
+          <div class="trace-hdr">
+            <div class="trace-title">
+              <span style="color: var(--accent-amber); font-family: var(--mono); font-size: 11px; font-weight: bold;">[ENTRY 04]</span>
+              <h3>Bundle 88759dd83e9a2ef46c607fe04e9e9f0f030ccf5f05600b75ea9bd8725a1c2b04</h3>
+            </div>
+            <div class="trace-meta">
+              <span class="trace-badge recovered">AI Recovered</span>
+            </div>
+          </div>
+          <div class="trace-timeline">
+            <div class="timeline-node"><span class="timeline-label">Sub</span> <span class="timeline-val">429055014</span></div>
+            <div class="timeline-arrow">➔</div>
+            <div class="timeline-node"><span class="timeline-label">Proc</span> <span class="timeline-val">429055015</span></div>
+            <div class="timeline-arrow">➔</div>
+            <div class="timeline-node"><span class="timeline-label">Conf</span> <span class="timeline-val">429055015</span></div>
+            <div class="timeline-arrow">➔</div>
+            <div class="timeline-node"><span class="timeline-label">Final</span> <span class="timeline-val">429055015</span></div>
+          </div>
+          <div class="trace-metrics-grid">
+            <div class="metric-item"><span class="metric-lbl">Tip Paid</span><span class="metric-val">15,000 lamports</span></div>
+            <div class="metric-item"><span class="metric-lbl">Attempt</span><span class="metric-val">3 (AI Retried)</span></div>
+            <div class="metric-item"><span class="metric-lbl">Operation</span><span class="metric-val">Meteora Remove Liquidity & Meteora Add Liquidity</span></div>
+            <div class="metric-item"><span class="metric-lbl">Confirmation</span><span class="metric-val">Jito Connection</span></div>
+          </div>
+          <div class="recovery-callout">
+            <strong>AI Diagnostics & Action:</strong> Attempt 1 failed due to <code>bundle_dropped</code> (fallback RPC initiated — Forced public RPC fallback guardrail triggered after attempt 3). The AI Advisor recovered by refreshing blockhash parameters and outbidding competitors to finalize successfully.
+          </div>
+          <div style="margin-top: 14px; border-top: 1px dashed rgba(255,255,255,0.06); padding-top: 12px;">
+            <span class="metric-lbl" style="display: block; margin-bottom: 6px;">Signatures & Explorer Links</span>
+            <div style="display: flex; flex-direction: column; gap: 6px;">
+              <div style="display: flex; justify-content: space-between; align-items: center; background-color: var(--bg-primary); padding: 6px 12px; border-radius: 4px; border: 1px solid rgba(255, 255, 255, 0.02);">
+                <code style="font-family: var(--mono); font-size: 10.5px; color: var(--text-secondary); word-break: break-all;">3LenJ49MV9BWfooPPFyGGqiQWvfveAuJz419vpq9TLnnaGSJ3p5jqnUvFhtU6KVihaDi9Ab3s5atqZKugj85zaDj</code>
+                <a href="https://solscan.io/tx/3LenJ49MV9BWfooPPFyGGqiQWvfveAuJz419vpq9TLnnaGSJ3p5jqnUvFhtU6KVihaDi9Ab3s5atqZKugj85zaDj" target="_blank" style="font-family: var(--mono); font-size: 10px; color: var(--accent-blue); text-decoration: none; margin-left: 12px; white-space: nowrap;">Solscan ↗</a>
+              </div>
+              <div style="display: flex; justify-content: space-between; align-items: center; background-color: var(--bg-primary); padding: 6px 12px; border-radius: 4px; border: 1px solid rgba(255, 255, 255, 0.02);">
+                <code style="font-family: var(--mono); font-size: 10.5px; color: var(--text-secondary); word-break: break-all;">5VtctK5QfNMGS5Qf4ncPRpBv97hyVRjBMzruSfFK3FAacxkjcxEnEGD53RgYWF6KAUQfJ5itNKZzXrvTJ9J7XEzL</code>
+                <a href="https://solscan.io/tx/5VtctK5QfNMGS5Qf4ncPRpBv97hyVRjBMzruSfFK3FAacxkjcxEnEGD53RgYWF6KAUQfJ5itNKZzXrvTJ9J7XEzL" target="_blank" style="font-family: var(--mono); font-size: 10px; color: var(--accent-blue); text-decoration: none; margin-left: 12px; white-space: nowrap;">Solscan ↗</a>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Entry 05 -->
+        <div class="trace-card">
+          <div class="trace-hdr">
+            <div class="trace-title">
+              <span style="color: var(--accent-amber); font-family: var(--mono); font-size: 11px; font-weight: bold;">[ENTRY 05]</span>
+              <h3>Bundle 143efc2f1d80bdf5d108fce815b53e836d3ca19644270ff2da089f72d3a968cb</h3>
+            </div>
+            <div class="trace-meta">
+              <span class="trace-badge recovered">AI Recovered</span>
+            </div>
+          </div>
+          <div class="trace-timeline">
+            <div class="timeline-node"><span class="timeline-label">Sub</span> <span class="timeline-val">429045955</span></div>
+            <div class="timeline-arrow">➔</div>
+            <div class="timeline-node"><span class="timeline-label">Proc</span> <span class="timeline-val">429045964</span></div>
+            <div class="timeline-arrow">➔</div>
+            <div class="timeline-node"><span class="timeline-label">Conf</span> <span class="timeline-val">429045964</span></div>
+            <div class="timeline-arrow">➔</div>
+            <div class="timeline-node"><span class="timeline-label">Final</span> <span class="timeline-val">429045964</span></div>
+          </div>
+          <div class="trace-metrics-grid">
+            <div class="metric-item"><span class="metric-lbl">Tip Paid</span><span class="metric-val">15,000,000 lamports</span></div>
+            <div class="metric-item"><span class="metric-lbl">Attempt</span><span class="metric-val">5 (AI Retried)</span></div>
+            <div class="metric-item"><span class="metric-lbl">Operation</span><span class="metric-val">Meteora Remove Liquidity & Other & Meteora Add Liquidity</span></div>
+            <div class="metric-item"><span class="metric-lbl">Confirmation</span><span class="metric-val">Jito Stream</span></div>
+          </div>
+          <div class="recovery-callout">
+            <strong>AI Diagnostics & Action:</strong> Attempt 1 failed due to <code>TIMEOUT</code> (Blockhash expired or Jito fee war.). The AI Advisor recovered by refreshing blockhash parameters and outbidding competitors to finalize successfully.
+          </div>
+          <div style="margin-top: 14px; border-top: 1px dashed rgba(255,255,255,0.06); padding-top: 12px;">
+            <span class="metric-lbl" style="display: block; margin-bottom: 6px;">Signatures & Explorer Links</span>
+            <div style="display: flex; flex-direction: column; gap: 6px;">
+              <div style="display: flex; justify-content: space-between; align-items: center; background-color: var(--bg-primary); padding: 6px 12px; border-radius: 4px; border: 1px solid rgba(255, 255, 255, 0.02);">
+                <code style="font-family: var(--mono); font-size: 10.5px; color: var(--text-secondary); word-break: break-all;">4NuJjjK3wMbDN2zmUabSdi7d6cCPkKgH2KYbitFKdsQ9Wh9AqZTjCT7dUmjeDvJVkVtx6SDbNNegRnKHZnCz311G</code>
+                <a href="https://solscan.io/tx/4NuJjjK3wMbDN2zmUabSdi7d6cCPkKgH2KYbitFKdsQ9Wh9AqZTjCT7dUmjeDvJVkVtx6SDbNNegRnKHZnCz311G" target="_blank" style="font-family: var(--mono); font-size: 10px; color: var(--accent-blue); text-decoration: none; margin-left: 12px; white-space: nowrap;">Solscan ↗</a>
+              </div>
+              <div style="display: flex; justify-content: space-between; align-items: center; background-color: var(--bg-primary); padding: 6px 12px; border-radius: 4px; border: 1px solid rgba(255, 255, 255, 0.02);">
+                <code style="font-family: var(--mono); font-size: 10.5px; color: var(--text-secondary); word-break: break-all;">4p1YkwxPcQtpkEy9eNZ8mRonBrDhbKDEm3hw2NGAeZu5Gb25MtJtXe36A2Cak23kFq98b1U9UQZYMLaF4WWsM3f4</code>
+                <a href="https://solscan.io/tx/4p1YkwxPcQtpkEy9eNZ8mRonBrDhbKDEm3hw2NGAeZu5Gb25MtJtXe36A2Cak23kFq98b1U9UQZYMLaF4WWsM3f4" target="_blank" style="font-family: var(--mono); font-size: 10px; color: var(--accent-blue); text-decoration: none; margin-left: 12px; white-space: nowrap;">Solscan ↗</a>
+              </div>
+              <div style="display: flex; justify-content: space-between; align-items: center; background-color: var(--bg-primary); padding: 6px 12px; border-radius: 4px; border: 1px solid rgba(255, 255, 255, 0.02);">
+                <code style="font-family: var(--mono); font-size: 10.5px; color: var(--text-secondary); word-break: break-all;">5zjwZtKxxTXriqxvPLpqL18N5p6GFDPdKbHCkZtidnKjhnyHjMDNF7Yw3HZQfRdL8ykYFnR4zAvzAqd3WEbgPFUM</code>
+                <a href="https://solscan.io/tx/5zjwZtKxxTXriqxvPLpqL18N5p6GFDPdKbHCkZtidnKjhnyHjMDNF7Yw3HZQfRdL8ykYFnR4zAvzAqd3WEbgPFUM" target="_blank" style="font-family: var(--mono); font-size: 10px; color: var(--accent-blue); text-decoration: none; margin-left: 12px; white-space: nowrap;">Solscan ↗</a>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Entry 06 -->
+        <div class="trace-card">
+          <div class="trace-hdr">
+            <div class="trace-title">
+              <span style="color: var(--accent-blue); font-family: var(--mono); font-size: 11px; font-weight: bold;">[ENTRY 06]</span>
+              <h3>Bundle 308f6e9629d13bb7265c7b303694d624eb2d0a3aa159949de2f938946a3c5082</h3>
+            </div>
+            <div class="trace-meta">
+              <span class="trace-badge success">Finalized</span>
+            </div>
+          </div>
+          <div class="trace-timeline">
+            <div class="timeline-node"><span class="timeline-label">Sub</span> <span class="timeline-val">428635810</span></div>
+            <div class="timeline-arrow">➔</div>
+            <div class="timeline-node"><span class="timeline-label">Proc</span> <span class="timeline-val">428635813</span></div>
+            <div class="timeline-arrow">➔</div>
+            <div class="timeline-node"><span class="timeline-label">Conf</span> <span class="timeline-val">428635813</span></div>
+            <div class="timeline-arrow">➔</div>
+            <div class="timeline-node"><span class="timeline-label">Final</span> <span class="timeline-val">428635813</span></div>
+          </div>
+          <div class="trace-metrics-grid">
+            <div class="metric-item"><span class="metric-lbl">Tip Paid</span><span class="metric-val">10,375,682 lamports</span></div>
+            <div class="metric-item"><span class="metric-lbl">Attempt</span><span class="metric-val">1</span></div>
+            <div class="metric-item"><span class="metric-lbl">Operation</span><span class="metric-val">Meteora Remove Liquidity & Other & Meteora Add Liquidity</span></div>
+            <div class="metric-item"><span class="metric-lbl">Confirmation</span><span class="metric-val">Jito Stream</span></div>
+          </div>
+          <div style="margin-top: 14px; border-top: 1px dashed rgba(255,255,255,0.06); padding-top: 12px;">
+            <span class="metric-lbl" style="display: block; margin-bottom: 6px;">Signatures & Explorer Links</span>
+            <div style="display: flex; flex-direction: column; gap: 6px;">
+              <div style="display: flex; justify-content: space-between; align-items: center; background-color: var(--bg-primary); padding: 6px 12px; border-radius: 4px; border: 1px solid rgba(255, 255, 255, 0.02);">
+                <code style="font-family: var(--mono); font-size: 10.5px; color: var(--text-secondary); word-break: break-all;">279GEZTKT4crCNPj4FzjNNYwQzZXPpvREEiBN8vmfEMFK2osd7YQqLosv1kbscSizRjgFLh4Zo5Ad12vH7oSQ2x9</code>
+                <a href="https://solscan.io/tx/279GEZTKT4crCNPj4FzjNNYwQzZXPpvREEiBN8vmfEMFK2osd7YQqLosv1kbscSizRjgFLh4Zo5Ad12vH7oSQ2x9" target="_blank" style="font-family: var(--mono); font-size: 10px; color: var(--accent-blue); text-decoration: none; margin-left: 12px; white-space: nowrap;">Solscan ↗</a>
+              </div>
+              <div style="display: flex; justify-content: space-between; align-items: center; background-color: var(--bg-primary); padding: 6px 12px; border-radius: 4px; border: 1px solid rgba(255, 255, 255, 0.02);">
+                <code style="font-family: var(--mono); font-size: 10.5px; color: var(--text-secondary); word-break: break-all;">2ZRTL6ZtqeQG6sD2tW8dH42NB35bjDFtn12GrpfkBcHSsco2Yx8TZDhJax4f2gWaUFVXESDqrXSYJMJrjH3VVtRG</code>
+                <a href="https://solscan.io/tx/2ZRTL6ZtqeQG6sD2tW8dH42NB35bjDFtn12GrpfkBcHSsco2Yx8TZDhJax4f2gWaUFVXESDqrXSYJMJrjH3VVtRG" target="_blank" style="font-family: var(--mono); font-size: 10px; color: var(--accent-blue); text-decoration: none; margin-left: 12px; white-space: nowrap;">Solscan ↗</a>
+              </div>
+              <div style="display: flex; justify-content: space-between; align-items: center; background-color: var(--bg-primary); padding: 6px 12px; border-radius: 4px; border: 1px solid rgba(255, 255, 255, 0.02);">
+                <code style="font-family: var(--mono); font-size: 10.5px; color: var(--text-secondary); word-break: break-all;">sa51npZvQfpwvQwF8Q8MeShKnXa6E9DZ1F4ogUJQ6norUhXNBz26tfqzU4gH8X6djQWNH1hwEueWEfe5AmmL55X</code>
+                <a href="https://solscan.io/tx/sa51npZvQfpwvQwF8Q8MeShKnXa6E9DZ1F4ogUJQ6norUhXNBz26tfqzU4gH8X6djQWNH1hwEueWEfe5AmmL55X" target="_blank" style="font-family: var(--mono); font-size: 10px; color: var(--accent-blue); text-decoration: none; margin-left: 12px; white-space: nowrap;">Solscan ↗</a>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Entry 07 -->
+        <div class="trace-card">
+          <div class="trace-hdr">
+            <div class="trace-title">
+              <span style="color: var(--accent-blue); font-family: var(--mono); font-size: 11px; font-weight: bold;">[ENTRY 07]</span>
+              <h3>Bundle 1c8d08b725913a93076c2f8b73984e052bbca48568cbe2ba9683d38fc81d2ad8</h3>
+            </div>
+            <div class="trace-meta">
+              <span class="trace-badge success">Finalized</span>
+            </div>
+          </div>
+          <div class="trace-timeline">
+            <div class="timeline-node"><span class="timeline-label">Sub</span> <span class="timeline-val">428635758</span></div>
+            <div class="timeline-arrow">➔</div>
+            <div class="timeline-node"><span class="timeline-label">Proc</span> <span class="timeline-val">428635766</span></div>
+            <div class="timeline-arrow">➔</div>
+            <div class="timeline-node"><span class="timeline-label">Conf</span> <span class="timeline-val">428635766</span></div>
+            <div class="timeline-arrow">➔</div>
+            <div class="timeline-node"><span class="timeline-label">Final</span> <span class="timeline-val">428635766</span></div>
+          </div>
+          <div class="trace-metrics-grid">
+            <div class="metric-item"><span class="metric-lbl">Tip Paid</span><span class="metric-val">10,417,111 lamports</span></div>
+            <div class="metric-item"><span class="metric-lbl">Attempt</span><span class="metric-val">1</span></div>
+            <div class="metric-item"><span class="metric-lbl">Operation</span><span class="metric-val">Meteora Remove Liquidity & Other & Meteora Add Liquidity</span></div>
+            <div class="metric-item"><span class="metric-lbl">Confirmation</span><span class="metric-val">Jito Stream</span></div>
+          </div>
+          <div style="margin-top: 14px; border-top: 1px dashed rgba(255,255,255,0.06); padding-top: 12px;">
+            <span class="metric-lbl" style="display: block; margin-bottom: 6px;">Signatures & Explorer Links</span>
+            <div style="display: flex; flex-direction: column; gap: 6px;">
+              <div style="display: flex; justify-content: space-between; align-items: center; background-color: var(--bg-primary); padding: 6px 12px; border-radius: 4px; border: 1px solid rgba(255, 255, 255, 0.02);">
+                <code style="font-family: var(--mono); font-size: 10.5px; color: var(--text-secondary); word-break: break-all;">3wcVJPRR3sty4m8ZqbvaJ1SEh6HLUyPGYmjdeZ8v5mA2NjHAoJfSYN7kVD8piYn3nXPFvrskjX9nWkZxV5D1Nshk</code>
+                <a href="https://solscan.io/tx/3wcVJPRR3sty4m8ZqbvaJ1SEh6HLUyPGYmjdeZ8v5mA2NjHAoJfSYN7kVD8piYn3nXPFvrskjX9nWkZxV5D1Nshk" target="_blank" style="font-family: var(--mono); font-size: 10px; color: var(--accent-blue); text-decoration: none; margin-left: 12px; white-space: nowrap;">Solscan ↗</a>
+              </div>
+              <div style="display: flex; justify-content: space-between; align-items: center; background-color: var(--bg-primary); padding: 6px 12px; border-radius: 4px; border: 1px solid rgba(255, 255, 255, 0.02);">
+                <code style="font-family: var(--mono); font-size: 10.5px; color: var(--text-secondary); word-break: break-all;">4Zeax1DQVYQnumee23rWppV1PxQ2WUjceHExZzUwYqcaeLNDiz93ZDnAX4UYf1B9DwPuw27NTGW7v7BQcAiCbv1u</code>
+                <a href="https://solscan.io/tx/4Zeax1DQVYQnumee23rWppV1PxQ2WUjceHExZzUwYqcaeLNDiz93ZDnAX4UYf1B9DwPuw27NTGW7v7BQcAiCbv1u" target="_blank" style="font-family: var(--mono); font-size: 10px; color: var(--accent-blue); text-decoration: none; margin-left: 12px; white-space: nowrap;">Solscan ↗</a>
+              </div>
+              <div style="display: flex; justify-content: space-between; align-items: center; background-color: var(--bg-primary); padding: 6px 12px; border-radius: 4px; border: 1px solid rgba(255, 255, 255, 0.02);">
+                <code style="font-family: var(--mono); font-size: 10.5px; color: var(--text-secondary); word-break: break-all;">UWKJ6T2mHukPpPR9cW3hzubtYGdTgjWFqHoXSQYe9NcuCGByS4rw718NWxj8JdYJ3fHLfAPvgkfDctaQNzgzi7u</code>
+                <a href="https://solscan.io/tx/UWKJ6T2mHukPpPR9cW3hzubtYGdTgjWFqHoXSQYe9NcuCGByS4rw718NWxj8JdYJ3fHLfAPvgkfDctaQNzgzi7u" target="_blank" style="font-family: var(--mono); font-size: 10px; color: var(--accent-blue); text-decoration: none; margin-left: 12px; white-space: nowrap;">Solscan ↗</a>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Entry 08 -->
+        <div class="trace-card">
+          <div class="trace-hdr">
+            <div class="trace-title">
+              <span style="color: var(--accent-blue); font-family: var(--mono); font-size: 11px; font-weight: bold;">[ENTRY 08]</span>
+              <h3>Bundle 5f35b7cd873816221f672eecd6cfe691edab7b9c5e35216a59edb6afd2553ae0</h3>
+            </div>
+            <div class="trace-meta">
+              <span class="trace-badge success">Finalized</span>
+            </div>
+          </div>
+          <div class="trace-timeline">
+            <div class="timeline-node"><span class="timeline-label">Sub</span> <span class="timeline-val">428632708</span></div>
+            <div class="timeline-arrow">➔</div>
+            <div class="timeline-node"><span class="timeline-label">Proc</span> <span class="timeline-val">428632712</span></div>
+            <div class="timeline-arrow">➔</div>
+            <div class="timeline-node"><span class="timeline-label">Conf</span> <span class="timeline-val">428632712</span></div>
+            <div class="timeline-arrow">➔</div>
+            <div class="timeline-node"><span class="timeline-label">Final</span> <span class="timeline-val">428632712</span></div>
+          </div>
+          <div class="trace-metrics-grid">
+            <div class="metric-item"><span class="metric-lbl">Tip Paid</span><span class="metric-val">10,963,089 lamports</span></div>
+            <div class="metric-item"><span class="metric-lbl">Attempt</span><span class="metric-val">1</span></div>
+            <div class="metric-item"><span class="metric-lbl">Operation</span><span class="metric-val">Meteora Remove Liquidity & Other & Meteora Add Liquidity</span></div>
+            <div class="metric-item"><span class="metric-lbl">Confirmation</span><span class="metric-val">Public RPC Fallback</span></div>
+          </div>
+          <div style="margin-top: 14px; border-top: 1px dashed rgba(255,255,255,0.06); padding-top: 12px;">
+            <span class="metric-lbl" style="display: block; margin-bottom: 6px;">Signatures & Explorer Links</span>
+            <div style="display: flex; flex-direction: column; gap: 6px;">
+              <div style="display: flex; justify-content: space-between; align-items: center; background-color: var(--bg-primary); padding: 6px 12px; border-radius: 4px; border: 1px solid rgba(255, 255, 255, 0.02);">
+                <code style="font-family: var(--mono); font-size: 10.5px; color: var(--text-secondary); word-break: break-all;">2Z59PQ5UxuuzeyQjHQ3yTYAogxGzi6nidQjXv5sUtFiGYJPcZGReP3tEL7D6yoY3ZRqxqR71shzey2BnEoKaeJq</code>
+                <a href="https://solscan.io/tx/2Z59PQ5UxuuzeyQjHQ3yTYAogxGzi6nidQjXv5sUtFiGYJPcZGReP3tEL7D6yoY3ZRqxqR71shzey2BnEoKaeJq" target="_blank" style="font-family: var(--mono); font-size: 10px; color: var(--accent-blue); text-decoration: none; margin-left: 12px; white-space: nowrap;">Solscan ↗</a>
+              </div>
+              <div style="display: flex; justify-content: space-between; align-items: center; background-color: var(--bg-primary); padding: 6px 12px; border-radius: 4px; border: 1px solid rgba(255, 255, 255, 0.02);">
+                <code style="font-family: var(--mono); font-size: 10.5px; color: var(--text-secondary); word-break: break-all;">3e6gSbWn6xmnY4mW62YBWVgVpDhbcUfXZ2KMiXVhagtK1NhedKX18TZWj5BoZZtnKNW889v4YKi2kueZkkRmr1wf</code>
+                <a href="https://solscan.io/tx/3e6gSbWn6xmnY4mW62YBWVgVpDhbcUfXZ2KMiXVhagtK1NhedKX18TZWj5BoZZtnKNW889v4YKi2kueZkkRmr1wf" target="_blank" style="font-family: var(--mono); font-size: 10px; color: var(--accent-blue); text-decoration: none; margin-left: 12px; white-space: nowrap;">Solscan ↗</a>
+              </div>
+              <div style="display: flex; justify-content: space-between; align-items: center; background-color: var(--bg-primary); padding: 6px 12px; border-radius: 4px; border: 1px solid rgba(255, 255, 255, 0.02);">
+                <code style="font-family: var(--mono); font-size: 10.5px; color: var(--text-secondary); word-break: break-all;">Uyh8o5cANS81tHK5huMexzycamZhHSGcKauwzdcc3q7VkmmBtvhhYxnb8364k6zTYfbxCrCDrWFEshdgeoBHifC</code>
+                <a href="https://solscan.io/tx/Uyh8o5cANS81tHK5huMexzycamZhHSGcKauwzdcc3q7VkmmBtvhhYxnb8364k6zTYfbxCrCDrWFEshdgeoBHifC" target="_blank" style="font-family: var(--mono); font-size: 10px; color: var(--accent-blue); text-decoration: none; margin-left: 12px; white-space: nowrap;">Solscan ↗</a>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Entry 09 -->
+        <div class="trace-card">
+          <div class="trace-hdr">
+            <div class="trace-title">
+              <span style="color: var(--accent-blue); font-family: var(--mono); font-size: 11px; font-weight: bold;">[ENTRY 09]</span>
+              <h3>Bundle 3bfbb722bb7b11aab8e4597e9659e11b95b91910630830e86548f32bf895c247</h3>
+            </div>
+            <div class="trace-meta">
+              <span class="trace-badge success">Finalized</span>
+            </div>
+          </div>
+          <div class="trace-timeline">
+            <div class="timeline-node"><span class="timeline-label">Sub</span> <span class="timeline-val">428628204</span></div>
+            <div class="timeline-arrow">➔</div>
+            <div class="timeline-node"><span class="timeline-label">Proc</span> <span class="timeline-val">428628211</span></div>
+            <div class="timeline-arrow">➔</div>
+            <div class="timeline-node"><span class="timeline-label">Conf</span> <span class="timeline-val">428628211</span></div>
+            <div class="timeline-arrow">➔</div>
+            <div class="timeline-node"><span class="timeline-label">Final</span> <span class="timeline-val">428628211</span></div>
+          </div>
+          <div class="trace-metrics-grid">
+            <div class="metric-item"><span class="metric-lbl">Tip Paid</span><span class="metric-val">6,052,744 lamports</span></div>
+            <div class="metric-item"><span class="metric-lbl">Attempt</span><span class="metric-val">1</span></div>
+            <div class="metric-item"><span class="metric-lbl">Operation</span><span class="metric-val">Meteora Remove Liquidity & Other & Meteora Add Liquidity</span></div>
+            <div class="metric-item"><span class="metric-lbl">Confirmation</span><span class="metric-val">Jito Stream</span></div>
+          </div>
+          <div style="margin-top: 14px; border-top: 1px dashed rgba(255,255,255,0.06); padding-top: 12px;">
+            <span class="metric-lbl" style="display: block; margin-bottom: 6px;">Signatures & Explorer Links</span>
+            <div style="display: flex; flex-direction: column; gap: 6px;">
+              <div style="display: flex; justify-content: space-between; align-items: center; background-color: var(--bg-primary); padding: 6px 12px; border-radius: 4px; border: 1px solid rgba(255, 255, 255, 0.02);">
+                <code style="font-family: var(--mono); font-size: 10.5px; color: var(--text-secondary); word-break: break-all;">2PDtiALfQYC4xCLgS3Yzp53REaP7RuTQwPLDazfueX7jvqkgySioJdhdTx1K2hmWosm2trnwiJzajECRsaGkiiVm</code>
+                <a href="https://solscan.io/tx/2PDtiALfQYC4xCLgS3Yzp53REaP7RuTQwPLDazfueX7jvqkgySioJdhdTx1K2hmWosm2trnwiJzajECRsaGkiiVm" target="_blank" style="font-family: var(--mono); font-size: 10px; color: var(--accent-blue); text-decoration: none; margin-left: 12px; white-space: nowrap;">Solscan ↗</a>
+              </div>
+              <div style="display: flex; justify-content: space-between; align-items: center; background-color: var(--bg-primary); padding: 6px 12px; border-radius: 4px; border: 1px solid rgba(255, 255, 255, 0.02);">
+                <code style="font-family: var(--mono); font-size: 10.5px; color: var(--text-secondary); word-break: break-all;">2fKXZA4rPRqP5yNanuwF3sapnYi8Y5EK1TSSVUVHCqZvFjCtXhuHexxvQmwgxk254Fp1m9DvhtuGpXtEf32V379i</code>
+                <a href="https://solscan.io/tx/2fKXZA4rPRqP5yNanuwF3sapnYi8Y5EK1TSSVUVHCqZvFjCtXhuHexxvQmwgxk254Fp1m9DvhtuGpXtEf32V379i" target="_blank" style="font-family: var(--mono); font-size: 10px; color: var(--accent-blue); text-decoration: none; margin-left: 12px; white-space: nowrap;">Solscan ↗</a>
+              </div>
+              <div style="display: flex; justify-content: space-between; align-items: center; background-color: var(--bg-primary); padding: 6px 12px; border-radius: 4px; border: 1px solid rgba(255, 255, 255, 0.02);">
+                <code style="font-family: var(--mono); font-size: 10.5px; color: var(--text-secondary); word-break: break-all;">539jhaoRW4DkFMSSmyLFMwxcDrysZf242EK7YZXHbegcL22WseSz8u83rWTVoKBHsKVt5HbUBZBwT3G2ZejyUuGa</code>
+                <a href="https://solscan.io/tx/539jhaoRW4DkFMSSmyLFMwxcDrysZf242EK7YZXHbegcL22WseSz8u83rWTVoKBHsKVt5HbUBZBwT3G2ZejyUuGa" target="_blank" style="font-family: var(--mono); font-size: 10px; color: var(--accent-blue); text-decoration: none; margin-left: 12px; white-space: nowrap;">Solscan ↗</a>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Entry 10 -->
+        <div class="trace-card">
+          <div class="trace-hdr">
+            <div class="trace-title">
+              <span style="color: var(--accent-blue); font-family: var(--mono); font-size: 11px; font-weight: bold;">[ENTRY 10]</span>
+              <h3>Bundle 3bad93b2ad3c6d3bf41a0c04227f1d4c392ecd74e3c794e6d1678465bc9367a1</h3>
+            </div>
+            <div class="trace-meta">
+              <span class="trace-badge success">Finalized</span>
+            </div>
+          </div>
+          <div class="trace-timeline">
+            <div class="timeline-node"><span class="timeline-label">Sub</span> <span class="timeline-val">428627097</span></div>
+            <div class="timeline-arrow">➔</div>
+            <div class="timeline-node"><span class="timeline-label">Proc</span> <span class="timeline-val">428627108</span></div>
+            <div class="timeline-arrow">➔</div>
+            <div class="timeline-node"><span class="timeline-label">Conf</span> <span class="timeline-val">428627108</span></div>
+            <div class="timeline-arrow">➔</div>
+            <div class="timeline-node"><span class="timeline-label">Final</span> <span class="timeline-val">428627108</span></div>
+          </div>
+          <div class="trace-metrics-grid">
+            <div class="metric-item"><span class="metric-lbl">Tip Paid</span><span class="metric-val">6,503,220 lamports</span></div>
+            <div class="metric-item"><span class="metric-lbl">Attempt</span><span class="metric-val">1</span></div>
+            <div class="metric-item"><span class="metric-lbl">Operation</span><span class="metric-val">Meteora Remove Liquidity & Other & Meteora Add Liquidity</span></div>
+            <div class="metric-item"><span class="metric-lbl">Confirmation</span><span class="metric-val">Jito Stream</span></div>
+          </div>
+          <div style="margin-top: 14px; border-top: 1px dashed rgba(255,255,255,0.06); padding-top: 12px;">
+            <span class="metric-lbl" style="display: block; margin-bottom: 6px;">Signatures & Explorer Links</span>
+            <div style="display: flex; flex-direction: column; gap: 6px;">
+              <div style="display: flex; justify-content: space-between; align-items: center; background-color: var(--bg-primary); padding: 6px 12px; border-radius: 4px; border: 1px solid rgba(255, 255, 255, 0.02);">
+                <code style="font-family: var(--mono); font-size: 10.5px; color: var(--text-secondary); word-break: break-all;">3FU6dfHxePAif4HGqR5pNc3578iGbM78oUCCVjQSo6s5dP2iF4efERjKvJfo6yQC8nFZxy6EQEC7goipD2zjokB6</code>
+                <a href="https://solscan.io/tx/3FU6dfHxePAif4HGqR5pNc3578iGbM78oUCCVjQSo6s5dP2iF4efERjKvJfo6yQC8nFZxy6EQEC7goipD2zjokB6" target="_blank" style="font-family: var(--mono); font-size: 10px; color: var(--accent-blue); text-decoration: none; margin-left: 12px; white-space: nowrap;">Solscan ↗</a>
+              </div>
+              <div style="display: flex; justify-content: space-between; align-items: center; background-color: var(--bg-primary); padding: 6px 12px; border-radius: 4px; border: 1px solid rgba(255, 255, 255, 0.02);">
+                <code style="font-family: var(--mono); font-size: 10.5px; color: var(--text-secondary); word-break: break-all;">3JFnUdi8bGEKQp5mp2nzNjsUXQb6jCGnTGvrcjTEUJxeKjCtYh1Gv3RQPGC8xuAeLoKnpNyp1QhF4PcvK1GASqGG</code>
+                <a href="https://solscan.io/tx/3JFnUdi8bGEKQp5mp2nzNjsUXQb6jCGnTGvrcjTEUJxeKjCtYh1Gv3RQPGC8xuAeLoKnpNyp1QhF4PcvK1GASqGG" target="_blank" style="font-family: var(--mono); font-size: 10px; color: var(--accent-blue); text-decoration: none; margin-left: 12px; white-space: nowrap;">Solscan ↗</a>
+              </div>
+              <div style="display: flex; justify-content: space-between; align-items: center; background-color: var(--bg-primary); padding: 6px 12px; border-radius: 4px; border: 1px solid rgba(255, 255, 255, 0.02);">
+                <code style="font-family: var(--mono); font-size: 10.5px; color: var(--text-secondary); word-break: break-all;">4K2ei2eZtURL1Hk9TSvWhG3LbVz4wRN9kQDrs3QEJdTdp9vESpLPjb9tZe4SGVGx1neyFuKnW1DKPJJBBBCugjib</code>
+                <a href="https://solscan.io/tx/4K2ei2eZtURL1Hk9TSvWhG3LbVz4wRN9kQDrs3QEJdTdp9vESpLPjb9tZe4SGVGx1neyFuKnW1DKPJJBBBCugjib" target="_blank" style="font-family: var(--mono); font-size: 10px; color: var(--accent-blue); text-decoration: none; margin-left: 12px; white-space: nowrap;">Solscan ↗</a>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- SECTION 6: README QUESTIONS -->
+    <section class="section" id="insights">
+      <div class="section-num">Section 06</div>
+      <h2>README Questions &amp; Operational Insights</h2>
+      <div class="section-desc">
+        Operational findings answering the core Solana network questions asked during mainnet runs:
+      </div>
+
+      <div class="grid-2" style="margin-top: 16px;">
+        <div class="deck-card">
+          <h3 style="font-size: 13px; font-family: var(--mono); color: var(--accent-blue);">Q1: processed_at vs
+            confirmed_at Delta</h3>
+          <p>
+            Measures the consensus vote propagation latency across the validator network.
+          </p>
+          <ul class="deck-bullet">
+            <li><strong>Optimal Network State:</strong> Delta sits at 400–800 ms (1–2 slots).</li>
+            <li><strong>Degraded Network State:</strong> Latency spikes above 2+ seconds due to transaction congestions
+              or micro-forking.</li>
+            <li><strong>SDK Action:</strong> AutoLand dynamically scales backpressure delays to defer sub-sequent
+              submissions until consensus stabilizes.</li>
+          </ul>
+        </div>
+
+        <div class="deck-card">
+          <h3 style="font-size: 13px; font-family: var(--mono); color: var(--accent-blue);">Q2: Why Avoid Finalized
+            Blockhashes</h3>
+          <p>
+            Solana blockhashes are valid for exactly 150 slots (~60 seconds). Finalized status requires 32 slots (~13–15
+            seconds).
+          </p>
+          <ul class="deck-bullet">
+            <li><strong>Validity Loss:</strong> A finalized blockhash burns 20–25% of its lifespan before the
+              transaction is signed.</li>
+            <li><strong>Staleness Risk:</strong> Congested blocks stretch slot times, causing finalized hashes to fail
+              validation on arrival.</li>
+            <li><strong>SDK Action:</strong> The stack queries blockhashes strictly at <code>confirmed</code> commitment
+              to preserve the maximum execution window.</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="deck-card" style="margin-top: 24px; width: 100%;">
+        <h3 style="font-size: 13px; font-family: var(--mono); color: var(--accent-blue);">Q3: What Happens if a Jito
+          Leader Skips their Slot?</h3>
+        <p>
+          Because Jito bundles are not gossiped across the public P2P mempool, they route off-chain to a specific
+          scheduled validator. If that validator skips their slot, the block engine drops the bundle immediately.
+        </p>
+        <ul class="deck-bullet">
+          <li><strong>Leader Distance Tracking:</strong> AutoLand tracks scheduled leaders via
+            <code>LeaderWindowDetector</code> and holds dispatch if the slot window is unfavorable.
+          </li>
+          <li><strong>Multi-Region Broadcast:</strong> dispatches bundles to regional Jito Block Engines in parallel to
+            mitigate routing drops.</li>
+          <li><strong>AI advisor Intervention:</strong> If a drop is flagged, the AI Advisor immediately updates the
+            blockhash and tip for the next viable window.</li>
+        </ul>
+      </div>
+    </section>
+
+  </div>
+
+  <footer>
+    <div class="container" style="display:flex; justify-content:space-between; width:100%;">
+      <div>AutoLand Specifications · Open-Source MIT License</div>
+      <div><a href="https://github.com/Timadigwe/Autoland" target="_blank">View GitHub Repository</a></div>
+    </div>
+  </footer>
+
+</body>
+
+</html>
