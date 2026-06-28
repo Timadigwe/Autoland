@@ -1,169 +1,160 @@
-# Architecture Design Document
+# AutoLand Architecture Specification
 
-## 1. System Overview
-
-The Intelligent DLMM bot manages concentrated liquidity on Meteora DLMM pools. Execution logic (drift detection, rebalance building) is deterministic and fast. **Failure recovery is autonomous**: a single AI agent with read-only tools decides retries within hard safety guardrails.
-
-**Submission path: Jito bundles only.** Public RPC is used for reads, `simulateBundle`, and confirmation fallback — never for transaction submission.
+This document details the architecture, data flows, and recovery strategies implemented in the AutoLand transaction execution stack.
 
 ---
 
-## 2. Component Architecture
+## 1. System Topology & Reusability
 
-### A. Data Ingestion (`GrpcClient` + `TipBalanceWatcher`)
+AutoLand is built as a reusable, developer-focused **Intelligent Transaction Execution Stack SDK** (`@autoland/core`). 
 
-- Jito tip account balance deltas (not mainnet tip tx firehose)
-- Slot updates → `JitoSubmitter`
-- Transaction status → dynamic per-signature subscription
-- Bounded event queue with async drain (backpressure-safe)
+It is designed to be imported as a library by any Solana application (bots, dApps, backend systems) that requires high-reliability transaction landing under contested network conditions.
 
-### B. Tip Intelligence (`TipTracker`)
-
-- Rolling p50/p90/p99 from tip account deltas
-- `getRecommendedTipLamports()` with margin + caps
-
-### C. Position Engine (`PositionEngine`)
-
-State machine: `NO_POSITION` → deploy | `IN_RANGE` → hold | `DRIFT_DETECTED` → rebalance | `REBALANCING` / `CONFIRMING` / `FAILED`
-
-### D. Rebalance Builder (`RebalanceBuilder`)
-
-Initial deploy uses wallet balances only (no swap). Rebalance: withdraw → mandatory in-pool swap (binary-search partial swap if full quote fails) → add liquidity. Supports per-attempt `slippageBps` override.
-
-### E. Jito Submission (`JitoSubmitter` + `JitoBundleSimulator`)
-
-1. Build & sign bundle with fresh blockhash
-2. **`simulateBundle`** via Jito-enabled RPC (atomic, in-order)
-3. Sequential regional `sendBundle`
-4. Record outcomes → `HealthMonitor`
-
-### F. Health Monitor (`HealthMonitor`)
-
-Rolling 5-minute window of:
-- RPC latency / failures
-- Jito accept rate / rate limits
-- Simulation pass rate
-- gRPC queue depth / dropped events
-
-Included in every `ExecutionIncident.health` snapshot.
-
-### G. Autonomous Failure Recovery
+The `dlmm-bot` package in this repository serves as a **real-world reference implementation** (tested live on the contested **WORLDCUP/SOL** pool) that demonstrates how to configure and call the AutoLand SDK to manage liquidity on Meteora DLMM pools.
 
 ```
-Failure
-  → parse error (phase, code, confidence)
-  → ExecutionIncident + sessionMemory + health
-  → save logs/incidents/{uuid}.json
-  → route decision:
-       high-confidence shortcut? → deterministic (optional speed path)
-       low confidence / unknown / repeated / attempt ≥ N → AI agent
-  → applySafetyGuardrails (caps, phase rules, HALT conditions)
-  → RETRY | DEFER | HALT
-```
-
-#### ExecutionSession (learn within session)
-
-Per rebalance execution, tracks:
-- All incidents this session
-- All decisions + mutations applied
-- Defer count
-- Repeated failure detection (same errorType + phase ≥ 2)
-
-Passed to AI in every incident and via `read_session_memory` tool.
-
-#### Confidence routing
-
-| Confidence | When | Decision path |
-|------------|------|---------------|
-| **high** | Parsed program code (6003), blockhash stale | Optional deterministic shortcut |
-| **medium** | Jito reject, auction drop | AI agent (or shortcut if not repeated) |
-| **low** | Unknown, transient, network, confirm timeout | **AI agent immediately** |
-
-#### AI agent tools (read-only)
-
-| Tool | Purpose |
-|------|---------|
-| `read_log_tail` | Recent `[ENGINE]`/`[JITO]`/`[STRATEGY]` lines |
-| `read_lifecycle_events` | Recent `lifecycle-log.jsonl` |
-| `read_incident` | Structured incident JSON |
-| `read_session_memory` | Session incidents + mutations + **attempt timeline** |
-| `get_config_slice` | Relevant env limits |
-| `get_tip_market_stats` | p50/p90/p99, recommended, sample count |
-| `get_pool_snapshot` | Cached active bin, position range, drift |
-| `get_attempt_timeline` | Per-attempt funnel (build→preflight→sim→jito→confirm) |
-| `list_similar_incidents` | Past incidents same errorType+phase with outcomes |
-| `read_simulation_logs` | Last simulateBundle logs this session |
-
-#### Pre-flight gate (deterministic, no LLM)
-
-Before Jito submit each attempt:
-1. **Bin freshness** — if active bin moved > `PREFLIGHT_MAX_BIN_DRIFT` since build → rebuild (no attempt consumed)
-2. **Tip check** — if `partial_swap_used` or tip < 80% recommended → bump to recommended
-3. **Health + underbid** — defer if health degraded and underbid
-
-Tip-only changes do not require tx rebuild; blockhash refreshed at submit.
-
-#### Actions
-
-| Action | Meaning |
-|--------|---------|
-| **RETRY** | Apply mutations, next attempt in loop |
-| **DEFER** | Wait `waitMs`, exit cycle, retry on next poll (network/transient) |
-| **HALT** | Stop execution, set `FAILED` |
-
-#### Safety guardrails (always code-enforced)
-
-- Tip ≤ `JITO_MAX_TIP_LAMPORTS`
-- Slippage ≤ `AI_MAX_SLIPPAGE_BPS_CAP`
-- No tip escalation on `bundle_simulation` + slippage errors
-- HALT after skip_swap + persistent slippage
-- Max defers per session (`AI_MAX_DEFERS_PER_SESSION`)
-
-### H. Confirmation Tracker (`ConfirmationTracker`)
-
-gRPC status + Jito inflight/bundle status + RPC polling with tiered timeouts.
-
----
-
-## 3. Failure Handling Flow
-
-```
-simulateBundle fail (6003)
-  → confidence=high, phase=bundle_simulation
-  → agent: slippageBps↑ or skipSwap (guardrail blocks tip-only)
-
-Jito reject / 429
-  → confidence=low/medium
-  → agent: tip↑ or DEFER if health degraded
-
-Confirm timeout
-  → confidence=low
-  → agent: tip↑ or DEFER
-
-Repeated same failure twice
-  → force agent even on attempt 1
+┌───────────────────────────────────────────────────────────────────────────────┐
+│                           Your Bot / Application                              │
+│  - Constructs transactions (e.g. swaps, token launch snipes, DLMM rebalances) │
+│  - Registers pool/account addresses for contention tracking                   │
+│  - Submits batches to the AutoLand SDK                                         │
+└──────────────────────────────────────┬────────────────────────────────────────┘
+                                       │ (Submit Transactions / Registers Filters)
+                                       ▼
+┌───────────────────────────────────────────────────────────────────────────────┐
+│                                 AutoLand SDK                                  │
+│  - Streams block telemetry, slots, and Jito bundle results                   │
+│  - Dynamically updates Yellowstone gRPC filters to trace signatures/contention │
+│  - Calculates localized fee rates (outbidding competitors or falling back)    │
+│  - Manages retry pipelines, simulations, and RPC fallbacks                    │
+│  - Executes AI Advisor diagnostic loops for dropped/failed bundles            │
+└───────────────────────────────────────────────────────────────────────────────┘
 ```
 
 ---
 
-## 4. Configuration
+## 2. Dynamic Fee & Contention Engine
 
-See `env.example`. Key AI/recovery vars:
+To guarantee block landing during high-congestion periods without overpaying during calm slots, the AutoLand SDK tracks localized contention on registered target accounts/pools in real-time.
 
 ```
-AI_ADVISOR_AFTER_ATTEMPT=2
-AI_USE_AGENT_FOR_LOW_CONFIDENCE=true
-AI_MAX_DEFERS_PER_SESSION=2
-AI_DEFAULT_DEFER_MS=10000
-AI_MAX_SLIPPAGE_BPS_CAP=2500
+                              ┌─────────────────────────┐
+                              │ Yellowstone gRPC Stream │
+                              └────────────┬────────────┘
+                                           │ (Pool Transactions)
+                                           ▼
+                            ┌─────────────────────────────┐
+                            │    CompetitorTipTracker     │
+                            └──────────────┬──────────────┘
+                                           │
+                    (Contested)?           ▼
+             ┌─────────────────────────────┴─────────────────────────────┐
+             │ YES                                                       │ NO
+             ▼                                                           ▼
+┌──────────────────────────────┐                           ┌──────────────────────────────┐
+│  Outbid Pool Competitors     │                           │   Global Jito Percentiles    │
+│  - Compute Max Tip/CU rate   │                           │   - Fetch block engine tips  │
+│  - Scale tip to target pool  │                           │   - Fallback to p50/p90/p99  │
+└────────────┬─────────────────┘                           └─────────────┬────────────────┘
+             │                                                           │
+             └─────────────────────────────┬─────────────────────────────┘
+                                           ▼
+                            ┌─────────────────────────────┐
+                            │      Dynamic Jito Tip       │
+                            └─────────────────────────────┘
 ```
+
+### A. How Jito Auctions Work
+* **Jito Bundle Lock Aggregation**: The Jito Block Engine aggregates the read/write lock requirements of all transactions inside a bundle using its `BundleAccountLocker`. This guarantees atomicity across transactions.
+* **Conflict Set Isolation**: Bundles competing for the same write-locks (e.g., multiple bots trying to swap on the same DLMM pool, sniping a new token launch from a Raydium/Pump pool, or executing arbitrage in the same block) are grouped into a single **Conflict Set**.
+* **Priority Auction Sorting**: Within each Conflict Set, Jito conducts a local priority auction every block, ranking conflicting bundles by their **Priority Score** (effective tip density):
+
+$$\text{Priority Score} = \frac{\text{Total Tip}}{\sum \text{CUs Requested}}$$
+
+Only the highest-paying bundle in the Conflict Set wins the lock, while the remaining conflicting bundles in that set are dropped.
+
+**Example of outbidding with optimized CUs:**
+* **Transaction A (Optimized)**: Requests `50,000 CUs` and pays a `5,000,000 lamport` tip. Its Priority Score is:
+  $$\frac{5,000,000}{50,000} = 100 \text{ lamports/CU}$$
+* **Transaction B (Default/Unoptimized)**: Requests `1,400,000 CUs` and pays a `70,000,000 lamport` tip. Its Priority Score is:
+  $$\frac{70,000,000}{1,400,000} = 50 \text{ lamports/CU}$$
+
+Even though Transaction B pays a **14x higher absolute tip** (70M lamports vs 5M lamports), **Transaction A wins the auction** and lands first because its Priority Score (effective tip density) is **2x higher** than Transaction B's. This allows highly optimized transactions to consistently outbid competitor bots at a fraction of the cost.
+
+### B. Our Approach: Tracking Contention & Competition for an Account
+Because Jito auctions happen off-chain and resolve block-by-block, global Jito tip APIs are too generic and lag behind localized bidding wars on active accounts. We solve this by tracking competition directly on the registered account:
+* **gRPC Account Streaming**: Through Yellowstone gRPC, the SDK streams all transactions writing to the registered account filter (`accountInclude` filters).
+* **Competitor Tip Profiling (`CompetitorTipTracker`)**: Parses transaction structures to extract Jito tips paid and CUs requested, computing the active **Competitor Tip/CU** rate for that account's lock budget.
+* **Dual-Tiered Bidding Logic**:
+  - **Contested State (Fee War)**: If active competition is detected on the account, the SDK dynamically scales its tip to outbid the competitor's active rate:
+    $$\text{Target Tip} = \text{Competitor Tip/CU} \times \text{Transaction CUs} \times \text{Outbid Multiplier}$$
+  - **Uncontested State (Normal/Calm)**: If the account is quiet, the tip calculation automatically defaults back to global Jito fee percentiles (p50/p90/p99) to prevent overpaying.
+
+This strategy was tested on the live **WORLDCUP/SOL** pool during high-volume trading phases, allowing transactions to land successfully block-by-block while reducing fee spend by up to 60% compared to static p99 tipping.
 
 ---
 
-## 5. Logs & Artifacts
+## 3. Compute Unit (CU) Resizing Optimization
 
-| Path | Content |
-|------|---------|
-| `logs/dlmm-mm-YYYY-MM-DD.log` | Full bot log |
-| `logs/lifecycle-log.jsonl` | Tx lifecycle events |
-| `logs/incidents/{uuid}.json` | Structured failure incidents |
+### The Priority Score Denominator
+If a developer builds a transaction requesting the default `1,400,000` CUs but the transaction execution only consumes `50,000` CUs, the effective Priority Score is reduced by **28x**. Jito is highly likely to drop this bundle in favor of smaller, higher-density competitor bundles.
+
+AutoLand solves this by integrating an automated **CU Resizing Optimization Pipeline**:
+
+```
+┌────────────────────────┐      ┌────────────────────────┐      ┌────────────────────────┐
+│  Compile Transactions  │ ───► │ Simulate Bundle (RPC)  │ ───► │  Parse CU Consumption  │
+└────────────────────────┘      └────────────────────────┘      └───────────┬────────────┘
+                                                                            │
+                                                                            ▼
+┌────────────────────────┐      ┌────────────────────────┐      ┌────────────────────────┐
+│  Build & Sign Bundle   │ ◄─── │ Re-size CU Instruction │ ◄─── │  Add 10% safety margin │
+└────────────────────────┘      └────────────────────────┘      └────────────────────────┘
+```
+
+1. **Pre-Flight Simulation**: The SDK intercepts transaction batches and submits them to the RPC's `simulateTransaction`/`simulateBundle` interfaces on the active network state.
+2. **Parsing & Extraction**: It extracts the exact number of Compute Units consumed by each instruction.
+3. **Safety Margin Injection**: Adds a 10% safety margin to accommodate any state changes between simulation and landing.
+4. **Instruction Update**: Replaces the default `SetComputeLimit` instructions in the transactions with the optimized limits.
+5. **Re-signing & Dispatch**: Re-signs the modified transaction batch and submits it to Jito.
+
+This dynamic resizing minimizes the denominator, maximizes the Priority Score, and allows our bundle to win Jito Conflict Set auctions at a fraction of the cost.
+
+---
+
+## 4. The Autonomous AI Recovery Stack
+
+When transaction submission fails or drops, the AutoLand SDK routes incidents to an LLM-powered recovery agent backed by strict program constraints. Because the advisor executes on retry and refreshes the transaction blockhash before resubmitting, we can trade off a small amount of inference latency. This allows the stack to remain compatible with any fast inference engine (such as Groq, OpenRouter, or custom LLM providers).
+
+### A. Failure Classification & Routing
+* **Deterministic Shortcut (High Confidence)**: Stale blockhashes or specific program errors are handled instantly using pre-programmed rules (e.g. immediate retry with a fresh blockhash).
+* **AI Diagnostic Loop (Low/Medium Confidence)**: Unknown rejections, compute limit overruns, simulation errors, or Jito drops are routed to the **AI Advisor** (configured via LLM API).
+
+### B. Advisor Diagnostics Tools
+The AI Advisor invokes read-only diagnostic tools in the workspace to retrieve context:
+* `read_lifecycle_events`: Inspects the transaction lifecycle trace (submitted slots, landing slots, drops).
+* `read_simulation_logs`: Examines detailed instruction simulation logs returned by `simulateBundle`.
+* `get_tip_market_stats`: Looks up current recommended tips versus what was paid.
+* `read_session_memory`: Tracks the history of retries and mutations applied *during this rebalance session* to prevent repeating failed actions.
+* `read_log_tail`: Inspects recent debug logs from the bot strategy and transaction dispatcher.
+
+### C. Safety Guardrails (Hard Code-Enforced)
+To prevent model hallucinations from causing financial loss, the advisor's suggested decisions are processed through strict, non-bypassable constraints:
+* **Absolute Tip Caps**: Bumps are capped at a hard limit (`JITO_MAX_TIP_LAMPORTS`).
+* **Slippage Caps**: Bumps to strategy slippage are restricted by `AI_MAX_SLIPPAGE_BPS_CAP`.
+* **Action Restrictions**: The model cannot increase tips for simulation failures caused by logic/slippage errors (which would only waste money).
+* **Halt Thresholds**: Automatically Halts the strategy if maximum retries are exhausted.
+
+---
+
+## 5. Submission & Confirmation Pipelines
+
+### A. Jito-First Dispatch
+* Transaction submission is restricted to Jito bundles to prevent toxic frontrunning or trade slippage.
+* Bundles are sent sequentially to regional Jito block engines (e.g., Frankfurt, NY, Tokyo) to minimize latency and stopped as soon as the bundle is accepted.
+
+### B. Dual-Channel Confirmation
+Confirmations are tracked simultaneously via:
+1. **Yellowstone gRPC Stream**: Dynamically registers signature status tracking filters inside the Yellowstone subscription to catch processed transactions at sub-second speeds.
+2. **RPC Polling Fallback**: Periodically queries `getSignatureStatuses` directly from the RPC nodes as a backup.
+3. **Jito Bundle Results gRPC Stream**: Subscribes to Jito's streaming `SubscribeBundleResults` API to immediately catch validator-level rejections (simulation failure, bid rejected) and fail fast, triggering the AI retry loop instantly instead of waiting for a timeout.

@@ -28,14 +28,14 @@ async function main(): Promise<void> {
     process.stdin.setRawMode(true);
     process.stdin.resume();
     process.stdin.setEncoding("utf8");
-    console.log("\n[READY] Press 'f' to inject a Jito failure test. Press Ctrl+C to exit.\n");
+    console.log("\n[READY] Press 'f' to toggle Jito low-fee injection on next rebalance. Press Ctrl+C to exit.\n");
 
     process.stdin.on("data", (key: string) => {
       if (key === "\u0003") {
         shutdown();
       }
       if (key.toLowerCase() === "f") {
-        // bot.testJitoFailure().catch(console.error);
+        bot.toggleFeeTooLowInjection();
       }
     });
   }

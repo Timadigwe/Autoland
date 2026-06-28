@@ -1,9 +1,9 @@
 import "dotenv/config";
 
 /**
- * Central, typed configuration. Every value comes from the environment
- * (NFR-6). No secrets and — critically — no tip *values* are hardcoded here;
- * TIP_CEILING_LAMPORTS is a safety rail, not a tip (FR-9).
+ * Central, typed configuration. Every value comes from the environment.
+ * No secrets and no tip values are hardcoded here;
+ * TIP_CEILING_LAMPORTS is a safety budget ceiling.
  */
 
 function req(name: string): string {
@@ -42,8 +42,6 @@ export const config = {
     http: req("RPC_URL"),
   },
 
-
-
   yellowstone: {
     url: req("GRPC_URL"),
     xToken: opt("X_TOKEN", ""),
@@ -56,7 +54,7 @@ export const config = {
   },
 
   wallet: {
-    secretKey: opt("WALLET_SECRET_KEY", process.env.PRIVATE_KEYS ? process.env.PRIVATE_KEYS.split(",")[0] : ""), // optional until Phase 2
+    secretKey: opt("WALLET_SECRET_KEY", process.env.PRIVATE_KEYS ? process.env.PRIVATE_KEYS.split(",")[0] : ""),
   },
 
   vllm: {
@@ -66,7 +64,6 @@ export const config = {
   },
 
   tips: {
-    // Safety ceiling only. The actual tip is always derived from tip_floor.
     ceilingLamports: num("JITO_MAX_TIP_LAMPORTS", num("TIP_CEILING_LAMPORTS", 100_000)),
     floorLamports: num("JITO_MIN_TIP_LAMPORTS", 10_000),
   },

@@ -7,7 +7,7 @@ import { BotConfig, WalletInfo } from "../types/config";
 import { RebalanceBuilder } from "../execution/rebalance-builder";
 import { PositionEngine } from "./position-engine";
 import { Logger } from "../utils/logger";
-import { AutoLand, BundleTransaction } from "@autoland/core"; // Using the new core SDK
+import { AutoLand, BundleTransaction, resolveWorkspacePath } from "@autoland/core"; // Using the new core SDK
 
 export class DlmmBot {
   private readonly config: BotConfig;
@@ -22,6 +22,7 @@ export class DlmmBot {
   private isExecuting = false;
   private pollTimer: NodeJS.Timeout | null = null;
   private telemetryTimer: NodeJS.Timeout | null = null;
+  private injectFeeTooLow = false;
 
   constructor() {
     this.config = ConfigManager.getInstance().getConfig();
@@ -31,7 +32,7 @@ export class DlmmBot {
     this.walletManager = new WalletManager(this.connection);
     this.rebalanceBuilder = new RebalanceBuilder(this.connection, this.config);
     this.positionEngine = new PositionEngine(this.config, this.rebalanceBuilder);
-    
+
     // Instantiate the intelligent transaction stack
     this.autoland = new AutoLand({
       connection: this.connection,
@@ -42,15 +43,19 @@ export class DlmmBot {
   public async initialize(): Promise<void> {
     this.logger.info("Initializing Intelligent DLMM Bot...");
     await this.walletManager.initializeWallets(this.config.wallets.privateKeys);
-    
+
     const walletCount = this.walletManager.getWalletCount();
     if (walletCount === 0) throw new Error("No wallets configured");
 
     // Start the AutoLand core observation loops (stream, congestion, tip floor)
     await this.autoland.start();
-    
+
     // Start tracking our target pool for contention / Alpha_Contention scalar
     this.autoland.trackPoolContention(this.config.dlmm.targetPool);
+
+    // Dynamic wallet tracking inside Yellowstone/stream connection
+    const tradingWallets = this.walletManager.getWallets().map((w) => w.publicKey);
+    this.autoland.trackAccounts(tradingWallets);
 
     this.logger.info("Bot initialized successfully");
   }
@@ -67,11 +72,11 @@ export class DlmmBot {
     }, this.config.engine.pollIntervalMs);
 
     // Setup embedded telemetry collection to avoid gRPC connection limits
-    const logFile = path.resolve(process.cwd(), "telemetry.csv");
+    const logFile = resolveWorkspacePath("telemetry.csv");
     if (!fs.existsSync(logFile)) {
       fs.writeFileSync(logFile, "timestamp,slot,skip_rate,latency_ms,congestion_mult,tip_p25,tip_p50,tip_p75,tip_p95,tip_p99\n");
     }
-    
+
     let lastSlot = 0;
     this.telemetryTimer = setInterval(() => {
       try {
@@ -129,32 +134,40 @@ export class DlmmBot {
       if (evaluation.shouldDeploy || evaluation.shouldRebalance) {
         const action = evaluation.shouldDeploy ? "deploy initial position" : "rebalance";
         this.logger.info(`[ENGINE] Triggering ${action}`);
-        
+
         const buildFn = evaluation.shouldDeploy
           ? () => this.rebalanceBuilder.buildDeployTransactions(wallet.keypair)
           : () => this.rebalanceBuilder.buildRebalanceTransactions(wallet.keypair);
 
         const buildResult = await buildFn();
-        
+
         // Convert to BundleTransaction format
         const bundleTxs: BundleTransaction[] = buildResult.transactions.map(t => {
           // Exclude the bot's main wallet from extraSigners since AutoLand automatically signs with it
           const extraSigners = t.signers.filter(s => !s.publicKey.equals(wallet.keypair.publicKey));
-          
+
           if (t.tx instanceof VersionedTransaction) {
             throw new Error("VersionedTransactions are not supported for bundle dynamic CU sizing.");
           }
-          
+
           return {
             instructions: t.tx.instructions,
             signers: extraSigners.length > 0 ? extraSigners : undefined
           };
         });
 
-        this.logger.info(`Submitting ${bundleTxs.length} separate transactions to AutoLand as one atomic Jito bundle...`);
-        const result = await this.autoland.submit(bundleTxs, {
+        const submitOpts: any = {
           urgency: "high"
-        });
+        };
+
+        if (this.injectFeeTooLow) {
+          this.logger.warn("[TEST] Low-fee injection is ENABLED. Overriding next attempt tip with 1,000 lamports (Jito will drop this)...");
+          submitOpts.customTipLamports = 1000;
+          this.injectFeeTooLow = false; // Reset so retries use AI-calculated tips
+        }
+
+        this.logger.info(`Submitting ${bundleTxs.length} separate transactions to AutoLand as one atomic Jito bundle...`);
+        const result = await this.autoland.submit(bundleTxs, submitOpts);
 
         if (result.landed) {
           this.logger.info(`[SUCCESS] Atomic bundle landed @ slot ${result.slot}`);
@@ -167,5 +180,10 @@ export class DlmmBot {
     } finally {
       this.isExecuting = false;
     }
+  }
+
+  public toggleFeeTooLowInjection(): void {
+    this.injectFeeTooLow = !this.injectFeeTooLow;
+    this.logger.info(`[TEST] Jito low-fee injection toggled: ${this.injectFeeTooLow ? "ENABLED (Will apply to next rebalance)" : "DISABLED"}`);
   }
 }
