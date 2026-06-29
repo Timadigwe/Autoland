@@ -173,3 +173,41 @@ If a transaction fails to progress, the system classifies the exact failure:
 * **Fee Too Low**: Jito auction floor/tip density not met.
 * **Compute Exceeded**: Transaction exceeded the allocated compute limits.
 * **Bundle Failure**: Validator dropped the Jito bundle (e.g. leader skip or simulation error).
+
+---
+
+## 6. Event-Driven Telemetry Hooks
+
+To support real-time dashboards, diagnostic visualizers, and external metrics collection (e.g. Datadog, Prometheus, Grafana) without blocking the critical transaction execution path, the AutoLand SDK implements an **Event-Emitter / Middleware Hook Architecture**.
+
+### A. Non-Blocking Event Dispatch
+The `@autoland/core` SDK inherits directly from Node's built-in `EventEmitter` class. Telemetry and lifecycle events are dispatched asynchronously out-of-band to guarantee zero latency overhead on the transaction pipeline.
+
+### B. Standard Telemetry Events
+Operators can subscribe to the following events on the `AutoLand` client instance:
+
+1. **`telemetry_update`** (Every 400ms):
+   Emits real-time network and contention state tracked via the Yellowstone gRPC stream:
+   * `slot`: Current network slot number.
+   * `status`: Slot status (`processed`, `confirmed`, `finalized`).
+   * `congestion`: Snapshot of block skip rates and processing latencies.
+   * `alphaContention`: Account contention multiplier.
+   * `maxCompetitorTipPerCU`: Active competitor outbid rates.
+   * `nextJitoLeaderSlot`: Next scheduled Jito leader.
+2. **`bundle_submitted`**:
+   Emits when a Jito bundle or fallback transaction is dispatched:
+   * `attempt`: Submission attempt number.
+   * `bundleId`: Jito bundle ID.
+   * `signatures`: Solana transaction signatures.
+   * `tipLamports`: Paid Jito tip in lamports.
+   * `tipAccount`: Selected Jito tip account.
+   * `slot`: Submission slot.
+3. **`bundle_accepted` / `bundle_processed` / `bundle_finalized`**:
+   Emits when block confirmation consensus transitions occur.
+4. **`bundle_rejected` / `bundle_dropped`**:
+   Emits when Jito drops or rejects the bundle, containing the parsed Jito status code (e.g., `simulation_failure`, `state_auction_bid_rejected`).
+5. **`simulation_failed`**:
+   Emits if local pre-flight simulation fails before dispatch.
+6. **`ai_decision`**:
+   Emits when the LLM Advisor evaluates a transaction failure and returns a recovery decision (RETRY, HOLD, ABORT, FALLBACK_RPC), including the prompt context and mutations (tip adjustments, blockhash refreshes).
+

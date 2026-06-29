@@ -1,3 +1,4 @@
+import { EventEmitter } from "events";
 import {
   Connection,
   Keypair,
@@ -36,7 +37,7 @@ export interface AutoLandConfig {
 // Re-export types for backward compatibility / caller convenience
 export { AutoLandSubmitOptions, BundleTransaction, AutoLandResult };
 
-export class AutoLand {
+export class AutoLand extends EventEmitter {
   private sdkWallet: Keypair;
   private sdkConnection: Connection;
   private submitEnabled: boolean;
@@ -58,6 +59,7 @@ export class AutoLand {
   private cancelJitoBundleSub?: () => void;
 
   constructor(cfg: AutoLandConfig = {}) {
+    super();
     if (!cfg.connection) throw new Error("Connection is required for AutoLand");
     this.sdkConnection = cfg.connection;
     if (cfg.wallet) {
@@ -88,7 +90,8 @@ export class AutoLand {
       getLifecycle: () => this.lifecycle,
       tipFloor: this.tipFloor,
       agent: this.agent,
-      jito: this.jito
+      jito: this.jito,
+      emit: (event: string, ...args: any[]) => this.emit(event, ...args)
     });
   }
 
@@ -144,13 +147,16 @@ export class AutoLand {
               const slot = Number(res.result.accepted.slot);
               log.info("Jito stream: bundle ACCEPTED", { bundleId, slot });
               lifecycle.reconcile(bundleId, "processed", slot);
+              this.emit("bundle_accepted", { bundleId, slot });
             } else if (res.result.processed) {
               const slot = Number(res.result.processed.slot);
               log.info("Jito stream: bundle PROCESSED", { bundleId, slot });
               lifecycle.reconcile(bundleId, "processed", slot);
+              this.emit("bundle_processed", { bundleId, slot });
             } else if (res.result.finalized) {
               log.info("Jito stream: bundle FINALIZED", { bundleId });
               lifecycle.reconcile(bundleId, "finalized", entry.stages.confirmed?.slot || entry.stages.processed?.slot || 0);
+              this.emit("bundle_finalized", { bundleId });
             } else if (res.result.rejected) {
               const rej = res.result.rejected;
               let reason = "Jito bundle rejected";
@@ -181,6 +187,8 @@ export class AutoLand {
                 detectedAtSlot: entry.stages.submitted?.slot || 0,
                 ts: new Date().toISOString()
               });
+
+              this.emit("bundle_rejected", { bundleId, reason, detail: rej, failClass });
             } else if (res.result.dropped) {
               log.warn("Jito stream: bundle DROPPED", { bundleId, reason: res.result.dropped.reason });
               lifecycle.fail(bundleId, {
@@ -189,6 +197,7 @@ export class AutoLand {
                 detectedAtSlot: entry.stages.submitted?.slot || 0,
                 ts: new Date().toISOString()
               });
+              this.emit("bundle_dropped", { bundleId, reason: res.result.dropped.reason });
             }
           }
         },
@@ -232,9 +241,19 @@ export class AutoLand {
                 log.info(`[TIP_FLOOR] Update: ${tipFloor.p50} lamports`);
               }
 
+              const alphaContention = this.stream?.contentionTracker?.getAlphaContention() ?? 1.0;
+              const maxCompetitorTipPerCU = this.stream?.competitorTracker?.getMaxTipPerCU() ?? 0;
+
+              this.emit("telemetry_update", {
+                slot: Number(ev.slot),
+                status: ev.status,
+                congestion: this.oracle?.snapshot(),
+                alphaContention,
+                maxCompetitorTipPerCU,
+                nextJitoLeaderSlot: cachedLeaderSlot
+              });
+
               if (now - lastLeaderPoll > 4_500) {
-                const alphaContention = this.stream?.contentionTracker?.getAlphaContention() ?? 1.0;
-                const maxCompetitorTipPerCU = this.stream?.competitorTracker?.getMaxTipPerCU() ?? 0;
                 log.info(`[CONTENTION] Live Slot: ${ev.slot} | Alpha Contention: ${alphaContention.toFixed(3)}x | Competitor Max Tip/CU: ${maxCompetitorTipPerCU.toFixed(4)} | Next Leader: ${cachedLeaderSlot ?? '?'}`);
               }
             }

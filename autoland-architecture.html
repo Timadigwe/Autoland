@@ -619,6 +619,7 @@
       white-space: pre-wrap;
       word-break: break-all;
     }
+
     /* --- EXECUTION TRACE SYSTEM --- */
     .execution-logs-list {
       display: flex;
@@ -626,6 +627,7 @@
       gap: 16px;
       margin-top: 24px;
     }
+
     .trace-card {
       background-color: var(--card-bg);
       border: 1px solid rgba(255, 255, 255, 0.08);
@@ -633,10 +635,12 @@
       padding: 20px;
       transition: border-color 0.2s ease, transform 0.2s ease;
     }
+
     .trace-card:hover {
       border-color: var(--border-highlight);
       transform: translateY(-1px);
     }
+
     .trace-hdr {
       display: flex;
       justify-content: space-between;
@@ -647,22 +651,26 @@
       padding-bottom: 12px;
       margin-bottom: 14px;
     }
+
     .trace-title {
       display: flex;
       align-items: center;
       gap: 8px;
     }
+
     .trace-title h3 {
       font-family: var(--mono);
       font-size: 13px;
       color: var(--text-primary);
       font-weight: 600;
     }
+
     .trace-meta {
       display: flex;
       gap: 12px;
       align-items: center;
     }
+
     .trace-badge {
       font-family: var(--sans);
       font-size: 10px;
@@ -671,16 +679,19 @@
       border-radius: 4px;
       text-transform: uppercase;
     }
+
     .trace-badge.success {
       background-color: rgba(16, 185, 129, 0.1);
       color: #34d399;
       border: 1px solid rgba(16, 185, 129, 0.2);
     }
+
     .trace-badge.recovered {
       background-color: rgba(245, 158, 11, 0.1);
       color: #fbbf24;
       border: 1px solid rgba(245, 158, 11, 0.2);
     }
+
     .trace-timeline {
       display: flex;
       align-items: center;
@@ -693,6 +704,7 @@
       overflow-x: auto;
       gap: 8px;
     }
+
     .timeline-node {
       display: flex;
       align-items: center;
@@ -701,17 +713,21 @@
       font-family: var(--mono);
       white-space: nowrap;
     }
+
     .timeline-label {
       color: var(--text-muted);
     }
+
     .timeline-val {
       color: var(--text-primary);
       font-weight: 500;
     }
+
     .timeline-arrow {
       color: var(--text-muted);
       font-size: 10px;
     }
+
     .trace-metrics-grid {
       display: grid;
       grid-template-columns: repeat(4, 1fr);
@@ -720,27 +736,32 @@
       color: var(--text-secondary);
       margin-top: 10px;
     }
+
     @media (max-width: 768px) {
       .trace-metrics-grid {
         grid-template-columns: 1fr 1fr;
       }
     }
+
     .metric-item {
       display: flex;
       flex-direction: column;
       gap: 4px;
     }
+
     .metric-lbl {
       font-size: 10px;
       text-transform: uppercase;
       color: var(--text-muted);
       font-family: var(--mono);
     }
+
     .metric-val {
       font-family: var(--mono);
       color: var(--text-primary);
       font-weight: 500;
     }
+
     .recovery-callout {
       margin-top: 12px;
       padding: 10px 14px;
@@ -750,6 +771,7 @@
       font-size: 12.5px;
       line-height: 1.5;
     }
+
     .recovery-callout strong {
       color: var(--accent-amber);
     }
@@ -775,6 +797,9 @@
       </div>
     </div>
   </header>
+  <div class="container">
+    <p class="hero-subtitle">This architecture was tested live on the contested <strong>WORLDCUP/SOL</strong> pool.</p>
+  </div>
 
   <div class="toc-bar">
     <div class="container">
@@ -790,6 +815,34 @@
   </div>
 
   <div class="container">
+
+    <!-- SYSTEM SCOPE INTRO -->
+    <div class="diag-box" style="margin-top: 32px; border-color: rgba(59, 130, 246, 0.2);">
+      <div class="diag-box-title">System Scope: Reference Implementation &amp; SDK Architecture</div>
+      <p style="font-size: 13px; color: var(--text-secondary); margin-bottom: 16px; line-height: 1.6;">
+        AutoLand is built as a reusable, developer-focused SDK (<code>@autoland/core</code>) imported by client applications to execute reliable block-space bidding. The relationship between the application layer and core stack is shown below:
+      </p>
+      <svg class="svg-diag" viewBox="0 0 800 160" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <!-- Bot Application Box -->
+        <rect x="40" y="40" width="280" height="80" rx="6" fill="#0d1220" stroke="#1d253f" />
+        <text x="60" y="65" fill="#f8fafc" font-family="sans-serif" font-size="11" font-weight="bold">Your Bot / Application (e.g. dlmm-bot)</text>
+        <text x="60" y="85" fill="#94a3b8" font-family="sans-serif" font-size="10">• Builds transactions (deposits, swaps, rebalances)</text>
+        <text x="60" y="105" fill="#94a3b8" font-family="sans-serif" font-size="10">• Registers target pools for fee tracking</text>
+
+        <!-- Arrow with labels -->
+        <path d="M320 80 H480" stroke="#3b82f6" stroke-width="2" />
+        <polygon points="480,76 480,84 487,80" fill="#3b82f6" />
+        <text x="335" y="65" fill="#3b82f6" font-family="monospace" font-size="9">1. Submit Tx Batches</text>
+        <text x="335" y="98" fill="#3b82f6" font-family="monospace" font-size="9">2. Track Pool Activity</text>
+
+        <!-- SDK Box -->
+        <rect x="480" y="30" width="280" height="100" rx="6" fill="#12182c" stroke="#3b82f6" stroke-width="1.5" />
+        <text x="500" y="55" fill="#3b82f6" font-family="monospace" font-size="11" font-weight="bold">AutoLand SDK (@autoland/core)</text>
+        <text x="500" y="78" fill="#cbd5e1" font-family="sans-serif" font-size="9.5">• Sub-100ms Yellowstone gRPC profiling</text>
+        <text x="500" y="96" fill="#cbd5e1" font-family="sans-serif" font-size="9.5">• Pre-flight CU Resizing &amp; outbidding</text>
+        <text x="500" y="114" fill="#cbd5e1" font-family="sans-serif" font-size="9.5">• Programmatic AI recovery loops</text>
+      </svg>
+    </div>
 
     <!-- SECTION 1: THE PROBLEM -->
     <section class="section" id="problem">
@@ -980,6 +1033,43 @@
         </svg>
       </div>
 
+      <div class="diag-box">
+        <div class="diag-box-title">Dual-Tiered Bidding Decision Logic</div>
+        <svg class="svg-diag" viewBox="0 0 800 240" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <!-- Yellowstone gRPC Stream input -->
+          <rect x="310" y="15" width="180" height="40" rx="4" fill="#0d1220" stroke="#3b82f6" />
+          <text x="325" y="38" fill="#f8fafc" font-family="monospace" font-size="9" font-weight="bold">Yellowstone gRPC Stream</text>
+
+          <!-- Arrow down to CompetitorTipTracker -->
+          <path d="M400 55 V90" stroke="#3b82f6" stroke-width="1.5" />
+          <polygon points="397,90 403,90 400,95" fill="#3b82f6" />
+
+          <!-- Decision block: Is Contested? -->
+          <rect x="320" y="95" width="160" height="40" rx="4" fill="#12182c" stroke="#fbbf24" stroke-width="1.5" />
+          <text x="355" y="118" fill="#fbbf24" font-family="sans-serif" font-size="10.5" font-weight="bold">Is Contested?</text>
+
+          <!-- YES branch (Left) -->
+          <path d="M320 115 H150 V150" stroke="#10b981" stroke-width="1.5" />
+          <polygon points="147,150 153,150 150,155" fill="#10b981" />
+          <text x="210" y="110" fill="#10b981" font-family="sans-serif" font-size="9.5" font-weight="bold">YES (Competitor active)</text>
+
+          <!-- NO branch (Right) -->
+          <path d="M480 115 H650 V150" stroke="#64748b" stroke-width="1.5" />
+          <polygon points="647,150 653,150 650,155" fill="#64748b" />
+          <text x="510" y="110" fill="#94a3b8" font-family="sans-serif" font-size="9.5" font-weight="bold">NO (Quiet pool)</text>
+
+          <!-- YES box -->
+          <rect x="50" y="155" width="200" height="60" rx="4" fill="#070b13" stroke="#10b981" />
+          <text x="65" y="178" fill="#34d399" font-family="monospace" font-size="10" font-weight="bold">Outbid Pool Competitors</text>
+          <text x="65" y="195" fill="#94a3b8" font-family="sans-serif" font-size="9">Target Tip = Max Competitor Tip/CU</text>
+
+          <!-- NO box -->
+          <rect x="550" y="155" width="200" height="60" rx="4" fill="#070b13" stroke="#1d253f" />
+          <text x="565" y="178" fill="#cbd5e1" font-family="monospace" font-size="10" font-weight="bold">Global Jito Percentiles</text>
+          <text x="565" y="195" fill="#94a3b8" font-family="sans-serif" font-size="9">Default to p50/p90 baseline</text>
+        </svg>
+      </div>
+
       <div class="grid-2">
         <div class="deck-card">
           <h3>1. Telemetry Stream</h3>
@@ -1157,8 +1247,10 @@
           <text x="265" y="65" fill="#3b82f6" font-family="sans-serif" font-size="11" font-weight="bold">AI Advisor
             Diagnostics</text>
           <text x="265" y="85" fill="#64748b" font-family="monospace" font-size="9">Tools: get_recent_lifecycles</text>
-          <text x="265" y="100" fill="#64748b" font-family="monospace" font-size="9">Tools: get_tip_percentile_info</text>
-          <text x="265" y="122" fill="#a78bfa" font-family="monospace" font-size="9" font-weight="bold">Output Action Params:</text>
+          <text x="265" y="100" fill="#64748b" font-family="monospace" font-size="9">Tools:
+            get_tip_percentile_info</text>
+          <text x="265" y="122" fill="#a78bfa" font-family="monospace" font-size="9" font-weight="bold">Output Action
+            Params:</text>
           <text x="265" y="137" fill="#10b981" font-family="monospace" font-size="9">refresh_blockhash: true</text>
 
           <!-- Arrow -->
@@ -1181,6 +1273,26 @@
           <text x="742" y="105" fill="#34d399" font-family="sans-serif" font-size="11" font-weight="bold">Retry</text>
         </svg>
       </div>
+
+      <div class="deck-card" style="margin-top: 24px; width: 100%;">
+        <h3 style="font-size: 14px; font-family: var(--mono); color: var(--accent-blue); margin-bottom: 8px;">
+          Event-Emitter Telemetry Hooks</h3>
+        <p style="font-size: 13px; color: var(--text-secondary); margin-bottom: 12px; line-height: 1.6;">
+          To support zero-overhead dashboards, UI monitors, and metrics monitoring (e.g. Grafana, Prometheus) without
+          blocking the critical transaction submission path, the AutoLand class extends Node's
+          <code>EventEmitter</code>. Operators can register listeners to capture:
+        </p>
+        <ul class="deck-bullet" style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+          <li><strong>telemetry_update:</strong> Emitted every 400ms with congestion levels, alpha contention, and next
+            leader slot schedules.</li>
+          <li><strong>bundle_submitted:</strong> Dispatched immediately upon forwarding to regional Jito Block Engines.
+          </li>
+          <li><strong>bundle_accepted / processed / finalized:</strong> Emits transaction state transitions resolved by
+            Yellowstone gRPC confirmation filters.</li>
+          <li><strong>ai_decision:</strong> Emits LLM Advisor diagnostics, selected recovery path (RETRY, HOLD, ABORT,
+            FALLBACK_RPC), and parameter adjustments.</li>
+        </ul>
+      </div>
     </section>
 
     <!-- SECTION 5: LIFECYCLE LOGS -->
@@ -1197,7 +1309,9 @@
         <div class="trace-card">
           <div class="trace-hdr">
             <div class="trace-title">
-              <span style="color: var(--accent-blue); font-family: var(--mono); font-size: 11px; font-weight: bold;">[ENTRY 01]</span>
+              <span
+                style="color: var(--accent-blue); font-family: var(--mono); font-size: 11px; font-weight: bold;">[ENTRY
+                01]</span>
               <h3>Bundle 82de89b4b61c088ce08137818628d924d088f6e9dc09be457fc6c408449fefc4</h3>
             </div>
             <div class="trace-meta">
@@ -1205,34 +1319,56 @@
             </div>
           </div>
           <div class="trace-timeline">
-            <div class="timeline-node"><span class="timeline-label">Sub</span> <span class="timeline-val">429341336</span></div>
+            <div class="timeline-node"><span class="timeline-label">Sub</span> <span
+                class="timeline-val">429341336</span></div>
             <div class="timeline-arrow">➔</div>
-            <div class="timeline-node"><span class="timeline-label">Proc</span> <span class="timeline-val">429341349</span></div>
+            <div class="timeline-node"><span class="timeline-label">Proc</span> <span
+                class="timeline-val">429341349</span></div>
             <div class="timeline-arrow">➔</div>
-            <div class="timeline-node"><span class="timeline-label">Conf</span> <span class="timeline-val">429341349</span></div>
+            <div class="timeline-node"><span class="timeline-label">Conf</span> <span
+                class="timeline-val">429341349</span></div>
             <div class="timeline-arrow">➔</div>
-            <div class="timeline-node"><span class="timeline-label">Final</span> <span class="timeline-val">429341349</span></div>
+            <div class="timeline-node"><span class="timeline-label">Final</span> <span
+                class="timeline-val">429341349</span></div>
           </div>
           <div class="trace-metrics-grid">
-            <div class="metric-item"><span class="metric-lbl">Tip Paid</span><span class="metric-val">6,851,610 lamports</span></div>
+            <div class="metric-item"><span class="metric-lbl">Tip Paid</span><span class="metric-val">6,851,610
+                lamports</span></div>
             <div class="metric-item"><span class="metric-lbl">Attempt</span><span class="metric-val">1</span></div>
-            <div class="metric-item"><span class="metric-lbl">Operation</span><span class="metric-val">Meteora Remove Liquidity & Other & Meteora Add Liquidity</span></div>
-            <div class="metric-item"><span class="metric-lbl">Confirmation</span><span class="metric-val">Jito Stream</span></div>
+            <div class="metric-item"><span class="metric-lbl">Operation</span><span class="metric-val">Meteora Remove
+                Liquidity & Other & Meteora Add Liquidity</span></div>
+            <div class="metric-item"><span class="metric-lbl">Confirmation</span><span class="metric-val">Jito
+                Stream</span></div>
           </div>
           <div style="margin-top: 14px; border-top: 1px dashed rgba(255,255,255,0.06); padding-top: 12px;">
             <span class="metric-lbl" style="display: block; margin-bottom: 6px;">Signatures & Explorer Links</span>
             <div style="display: flex; flex-direction: column; gap: 6px;">
-              <div style="display: flex; justify-content: space-between; align-items: center; background-color: var(--bg-primary); padding: 6px 12px; border-radius: 4px; border: 1px solid rgba(255, 255, 255, 0.02);">
-                <code style="font-family: var(--mono); font-size: 10.5px; color: var(--text-secondary); word-break: break-all;">3s48PtttU1wuBu3msbq8WABBDsViEcAiCypswfH8nLcd3NiJ9eosSbNm7AxbAEiooKqPKB1T4BQHizkZ2VBHnbsZ</code>
-                <a href="https://solscan.io/tx/3s48PtttU1wuBu3msbq8WABBDsViEcAiCypswfH8nLcd3NiJ9eosSbNm7AxbAEiooKqPKB1T4BQHizkZ2VBHnbsZ" target="_blank" style="font-family: var(--mono); font-size: 10px; color: var(--accent-blue); text-decoration: none; margin-left: 12px; white-space: nowrap;">Solscan ↗</a>
+              <div
+                style="display: flex; justify-content: space-between; align-items: center; background-color: var(--bg-primary); padding: 6px 12px; border-radius: 4px; border: 1px solid rgba(255, 255, 255, 0.02);">
+                <code
+                  style="font-family: var(--mono); font-size: 10.5px; color: var(--text-secondary); word-break: break-all;">3s48PtttU1wuBu3msbq8WABBDsViEcAiCypswfH8nLcd3NiJ9eosSbNm7AxbAEiooKqPKB1T4BQHizkZ2VBHnbsZ</code>
+                <a href="https://solscan.io/tx/3s48PtttU1wuBu3msbq8WABBDsViEcAiCypswfH8nLcd3NiJ9eosSbNm7AxbAEiooKqPKB1T4BQHizkZ2VBHnbsZ"
+                  target="_blank"
+                  style="font-family: var(--mono); font-size: 10px; color: var(--accent-blue); text-decoration: none; margin-left: 12px; white-space: nowrap;">Solscan
+                  ↗</a>
               </div>
-              <div style="display: flex; justify-content: space-between; align-items: center; background-color: var(--bg-primary); padding: 6px 12px; border-radius: 4px; border: 1px solid rgba(255, 255, 255, 0.02);">
-                <code style="font-family: var(--mono); font-size: 10.5px; color: var(--text-secondary); word-break: break-all;">4NKTCrZeXNc3zAWn8s1f7LaxPDkgbiAWuto9QiiqYwyK4i7oBfsLjsvSADxbCmHsPskdvPJL4LBDjkyKUp7m3jmY</code>
-                <a href="https://solscan.io/tx/4NKTCrZeXNc3zAWn8s1f7LaxPDkgbiAWuto9QiiqYwyK4i7oBfsLjsvSADxbCmHsPskdvPJL4LBDjkyKUp7m3jmY" target="_blank" style="font-family: var(--mono); font-size: 10px; color: var(--accent-blue); text-decoration: none; margin-left: 12px; white-space: nowrap;">Solscan ↗</a>
+              <div
+                style="display: flex; justify-content: space-between; align-items: center; background-color: var(--bg-primary); padding: 6px 12px; border-radius: 4px; border: 1px solid rgba(255, 255, 255, 0.02);">
+                <code
+                  style="font-family: var(--mono); font-size: 10.5px; color: var(--text-secondary); word-break: break-all;">4NKTCrZeXNc3zAWn8s1f7LaxPDkgbiAWuto9QiiqYwyK4i7oBfsLjsvSADxbCmHsPskdvPJL4LBDjkyKUp7m3jmY</code>
+                <a href="https://solscan.io/tx/4NKTCrZeXNc3zAWn8s1f7LaxPDkgbiAWuto9QiiqYwyK4i7oBfsLjsvSADxbCmHsPskdvPJL4LBDjkyKUp7m3jmY"
+                  target="_blank"
+                  style="font-family: var(--mono); font-size: 10px; color: var(--accent-blue); text-decoration: none; margin-left: 12px; white-space: nowrap;">Solscan
+                  ↗</a>
               </div>
-              <div style="display: flex; justify-content: space-between; align-items: center; background-color: var(--bg-primary); padding: 6px 12px; border-radius: 4px; border: 1px solid rgba(255, 255, 255, 0.02);">
-                <code style="font-family: var(--mono); font-size: 10.5px; color: var(--text-secondary); word-break: break-all;">4pa2FYcgAcM4pQTGtAYFgpksN86U5LEJvoSrKs2BrNKui6vL7ik5ae3oue952EHm7Zx95KrMx2wtBZNpJGbLra5e</code>
-                <a href="https://solscan.io/tx/4pa2FYcgAcM4pQTGtAYFgpksN86U5LEJvoSrKs2BrNKui6vL7ik5ae3oue952EHm7Zx95KrMx2wtBZNpJGbLra5e" target="_blank" style="font-family: var(--mono); font-size: 10px; color: var(--accent-blue); text-decoration: none; margin-left: 12px; white-space: nowrap;">Solscan ↗</a>
+              <div
+                style="display: flex; justify-content: space-between; align-items: center; background-color: var(--bg-primary); padding: 6px 12px; border-radius: 4px; border: 1px solid rgba(255, 255, 255, 0.02);">
+                <code
+                  style="font-family: var(--mono); font-size: 10.5px; color: var(--text-secondary); word-break: break-all;">4pa2FYcgAcM4pQTGtAYFgpksN86U5LEJvoSrKs2BrNKui6vL7ik5ae3oue952EHm7Zx95KrMx2wtBZNpJGbLra5e</code>
+                <a href="https://solscan.io/tx/4pa2FYcgAcM4pQTGtAYFgpksN86U5LEJvoSrKs2BrNKui6vL7ik5ae3oue952EHm7Zx95KrMx2wtBZNpJGbLra5e"
+                  target="_blank"
+                  style="font-family: var(--mono); font-size: 10px; color: var(--accent-blue); text-decoration: none; margin-left: 12px; white-space: nowrap;">Solscan
+                  ↗</a>
               </div>
             </div>
           </div>
@@ -1242,7 +1378,9 @@
         <div class="trace-card">
           <div class="trace-hdr">
             <div class="trace-title">
-              <span style="color: var(--accent-amber); font-family: var(--mono); font-size: 11px; font-weight: bold;">[ENTRY 02]</span>
+              <span
+                style="color: var(--accent-amber); font-family: var(--mono); font-size: 11px; font-weight: bold;">[ENTRY
+                02]</span>
               <h3>Bundle 4858d2377ff9b7b621307c6ab0ab35e475dbbf81af3fd68237a42d19949a22ef</h3>
             </div>
             <div class="trace-meta">
@@ -1250,29 +1388,44 @@
             </div>
           </div>
           <div class="trace-timeline">
-            <div class="timeline-node"><span class="timeline-label">Sub</span> <span class="timeline-val">429331685</span></div>
+            <div class="timeline-node"><span class="timeline-label">Sub</span> <span
+                class="timeline-val">429331685</span></div>
             <div class="timeline-arrow">➔</div>
-            <div class="timeline-node"><span class="timeline-label">Proc</span> <span class="timeline-val">429331836</span></div>
+            <div class="timeline-node"><span class="timeline-label">Proc</span> <span
+                class="timeline-val">429331836</span></div>
             <div class="timeline-arrow">➔</div>
-            <div class="timeline-node"><span class="timeline-label">Conf</span> <span class="timeline-val">429331836</span></div>
+            <div class="timeline-node"><span class="timeline-label">Conf</span> <span
+                class="timeline-val">429331836</span></div>
             <div class="timeline-arrow">➔</div>
-            <div class="timeline-node"><span class="timeline-label">Final</span> <span class="timeline-val">429331836</span></div>
+            <div class="timeline-node"><span class="timeline-label">Final</span> <span
+                class="timeline-val">429331836</span></div>
           </div>
           <div class="trace-metrics-grid">
-            <div class="metric-item"><span class="metric-lbl">Tip Paid</span><span class="metric-val">15,000 lamports</span></div>
-            <div class="metric-item"><span class="metric-lbl">Attempt</span><span class="metric-val">3 (AI Retried)</span></div>
-            <div class="metric-item"><span class="metric-lbl">Operation</span><span class="metric-val">Meteora Remove Liquidity</span></div>
-            <div class="metric-item"><span class="metric-lbl">Confirmation</span><span class="metric-val">Jito Stream</span></div>
+            <div class="metric-item"><span class="metric-lbl">Tip Paid</span><span class="metric-val">15,000
+                lamports</span></div>
+            <div class="metric-item"><span class="metric-lbl">Attempt</span><span class="metric-val">3 (AI
+                Retried)</span></div>
+            <div class="metric-item"><span class="metric-lbl">Operation</span><span class="metric-val">Meteora Remove
+                Liquidity</span></div>
+            <div class="metric-item"><span class="metric-lbl">Confirmation</span><span class="metric-val">Jito
+                Stream</span></div>
           </div>
           <div class="recovery-callout">
-            <strong>AI Diagnostics & Action:</strong> Attempt 1 failed due to <code>TIMEOUT</code> (Blockhash expired or Jito fee war.). The AI Advisor recovered by refreshing blockhash parameters and outbidding competitors to finalize successfully.
+            <strong>AI Diagnostics & Action:</strong> Attempt 1 failed due to <code>TIMEOUT</code> (Blockhash expired or
+            Jito fee war.). The AI Advisor recovered by refreshing blockhash parameters and outbidding competitors to
+            finalize successfully.
           </div>
           <div style="margin-top: 14px; border-top: 1px dashed rgba(255,255,255,0.06); padding-top: 12px;">
             <span class="metric-lbl" style="display: block; margin-bottom: 6px;">Signatures & Explorer Links</span>
             <div style="display: flex; flex-direction: column; gap: 6px;">
-              <div style="display: flex; justify-content: space-between; align-items: center; background-color: var(--bg-primary); padding: 6px 12px; border-radius: 4px; border: 1px solid rgba(255, 255, 255, 0.02);">
-                <code style="font-family: var(--mono); font-size: 10.5px; color: var(--text-secondary); word-break: break-all;">5tNGQ1tzy3BTwx7rG3qyXQeK5a5jDqMuDXTRS4cYktUzWiXMYGcSAaNmPxwqJdDTvviLWk678sXryGvphphAPqxC</code>
-                <a href="https://solscan.io/tx/5tNGQ1tzy3BTwx7rG3qyXQeK5a5jDqMuDXTRS4cYktUzWiXMYGcSAaNmPxwqJdDTvviLWk678sXryGvphphAPqxC" target="_blank" style="font-family: var(--mono); font-size: 10px; color: var(--accent-blue); text-decoration: none; margin-left: 12px; white-space: nowrap;">Solscan ↗</a>
+              <div
+                style="display: flex; justify-content: space-between; align-items: center; background-color: var(--bg-primary); padding: 6px 12px; border-radius: 4px; border: 1px solid rgba(255, 255, 255, 0.02);">
+                <code
+                  style="font-family: var(--mono); font-size: 10.5px; color: var(--text-secondary); word-break: break-all;">5tNGQ1tzy3BTwx7rG3qyXQeK5a5jDqMuDXTRS4cYktUzWiXMYGcSAaNmPxwqJdDTvviLWk678sXryGvphphAPqxC</code>
+                <a href="https://solscan.io/tx/5tNGQ1tzy3BTwx7rG3qyXQeK5a5jDqMuDXTRS4cYktUzWiXMYGcSAaNmPxwqJdDTvviLWk678sXryGvphphAPqxC"
+                  target="_blank"
+                  style="font-family: var(--mono); font-size: 10px; color: var(--accent-blue); text-decoration: none; margin-left: 12px; white-space: nowrap;">Solscan
+                  ↗</a>
               </div>
             </div>
           </div>
@@ -1282,7 +1435,9 @@
         <div class="trace-card">
           <div class="trace-hdr">
             <div class="trace-title">
-              <span style="color: var(--accent-blue); font-family: var(--mono); font-size: 11px; font-weight: bold;">[ENTRY 03]</span>
+              <span
+                style="color: var(--accent-blue); font-family: var(--mono); font-size: 11px; font-weight: bold;">[ENTRY
+                03]</span>
               <h3>Bundle 96b8c42cfc5105edb8abad9a923f5c620e368a2c67daac5c0f1376c9c8337146</h3>
             </div>
             <div class="trace-meta">
@@ -1290,34 +1445,56 @@
             </div>
           </div>
           <div class="trace-timeline">
-            <div class="timeline-node"><span class="timeline-label">Sub</span> <span class="timeline-val">429055156</span></div>
+            <div class="timeline-node"><span class="timeline-label">Sub</span> <span
+                class="timeline-val">429055156</span></div>
             <div class="timeline-arrow">➔</div>
-            <div class="timeline-node"><span class="timeline-label">Proc</span> <span class="timeline-val">429055162</span></div>
+            <div class="timeline-node"><span class="timeline-label">Proc</span> <span
+                class="timeline-val">429055162</span></div>
             <div class="timeline-arrow">➔</div>
-            <div class="timeline-node"><span class="timeline-label">Conf</span> <span class="timeline-val">429055162</span></div>
+            <div class="timeline-node"><span class="timeline-label">Conf</span> <span
+                class="timeline-val">429055162</span></div>
             <div class="timeline-arrow">➔</div>
-            <div class="timeline-node"><span class="timeline-label">Final</span> <span class="timeline-val">429055162</span></div>
+            <div class="timeline-node"><span class="timeline-label">Final</span> <span
+                class="timeline-val">429055162</span></div>
           </div>
           <div class="trace-metrics-grid">
-            <div class="metric-item"><span class="metric-lbl">Tip Paid</span><span class="metric-val">11,588,776 lamports</span></div>
+            <div class="metric-item"><span class="metric-lbl">Tip Paid</span><span class="metric-val">11,588,776
+                lamports</span></div>
             <div class="metric-item"><span class="metric-lbl">Attempt</span><span class="metric-val">1</span></div>
-            <div class="metric-item"><span class="metric-lbl">Operation</span><span class="metric-val">Meteora Remove Liquidity & Other & Meteora Add Liquidity</span></div>
-            <div class="metric-item"><span class="metric-lbl">Confirmation</span><span class="metric-val">Jito Stream</span></div>
+            <div class="metric-item"><span class="metric-lbl">Operation</span><span class="metric-val">Meteora Remove
+                Liquidity & Other & Meteora Add Liquidity</span></div>
+            <div class="metric-item"><span class="metric-lbl">Confirmation</span><span class="metric-val">Jito
+                Stream</span></div>
           </div>
           <div style="margin-top: 14px; border-top: 1px dashed rgba(255,255,255,0.06); padding-top: 12px;">
             <span class="metric-lbl" style="display: block; margin-bottom: 6px;">Signatures & Explorer Links</span>
             <div style="display: flex; flex-direction: column; gap: 6px;">
-              <div style="display: flex; justify-content: space-between; align-items: center; background-color: var(--bg-primary); padding: 6px 12px; border-radius: 4px; border: 1px solid rgba(255, 255, 255, 0.02);">
-                <code style="font-family: var(--mono); font-size: 10.5px; color: var(--text-secondary); word-break: break-all;">2FLUzdtGxE7EVcgDHAWtsn2ziTu6EYTNg6p2hEKZbqacog39uBd1xTRrLivepGdRe1BnBCwgzCksQYFtPVR6mHCY</code>
-                <a href="https://solscan.io/tx/2FLUzdtGxE7EVcgDHAWtsn2ziTu6EYTNg6p2hEKZbqacog39uBd1xTRrLivepGdRe1BnBCwgzCksQYFtPVR6mHCY" target="_blank" style="font-family: var(--mono); font-size: 10px; color: var(--accent-blue); text-decoration: none; margin-left: 12px; white-space: nowrap;">Solscan ↗</a>
+              <div
+                style="display: flex; justify-content: space-between; align-items: center; background-color: var(--bg-primary); padding: 6px 12px; border-radius: 4px; border: 1px solid rgba(255, 255, 255, 0.02);">
+                <code
+                  style="font-family: var(--mono); font-size: 10.5px; color: var(--text-secondary); word-break: break-all;">2FLUzdtGxE7EVcgDHAWtsn2ziTu6EYTNg6p2hEKZbqacog39uBd1xTRrLivepGdRe1BnBCwgzCksQYFtPVR6mHCY</code>
+                <a href="https://solscan.io/tx/2FLUzdtGxE7EVcgDHAWtsn2ziTu6EYTNg6p2hEKZbqacog39uBd1xTRrLivepGdRe1BnBCwgzCksQYFtPVR6mHCY"
+                  target="_blank"
+                  style="font-family: var(--mono); font-size: 10px; color: var(--accent-blue); text-decoration: none; margin-left: 12px; white-space: nowrap;">Solscan
+                  ↗</a>
               </div>
-              <div style="display: flex; justify-content: space-between; align-items: center; background-color: var(--bg-primary); padding: 6px 12px; border-radius: 4px; border: 1px solid rgba(255, 255, 255, 0.02);">
-                <code style="font-family: var(--mono); font-size: 10.5px; color: var(--text-secondary); word-break: break-all;">54r4SoHmybzaqzAjbHkKq8tLQSXrnJeQLBsQPbtErZmptJH6NLkrgaseksjvvejQEJrqJaBiq7rnKEtecyESFPCP</code>
-                <a href="https://solscan.io/tx/54r4SoHmybzaqzAjbHkKq8tLQSXrnJeQLBsQPbtErZmptJH6NLkrgaseksjvvejQEJrqJaBiq7rnKEtecyESFPCP" target="_blank" style="font-family: var(--mono); font-size: 10px; color: var(--accent-blue); text-decoration: none; margin-left: 12px; white-space: nowrap;">Solscan ↗</a>
+              <div
+                style="display: flex; justify-content: space-between; align-items: center; background-color: var(--bg-primary); padding: 6px 12px; border-radius: 4px; border: 1px solid rgba(255, 255, 255, 0.02);">
+                <code
+                  style="font-family: var(--mono); font-size: 10.5px; color: var(--text-secondary); word-break: break-all;">54r4SoHmybzaqzAjbHkKq8tLQSXrnJeQLBsQPbtErZmptJH6NLkrgaseksjvvejQEJrqJaBiq7rnKEtecyESFPCP</code>
+                <a href="https://solscan.io/tx/54r4SoHmybzaqzAjbHkKq8tLQSXrnJeQLBsQPbtErZmptJH6NLkrgaseksjvvejQEJrqJaBiq7rnKEtecyESFPCP"
+                  target="_blank"
+                  style="font-family: var(--mono); font-size: 10px; color: var(--accent-blue); text-decoration: none; margin-left: 12px; white-space: nowrap;">Solscan
+                  ↗</a>
               </div>
-              <div style="display: flex; justify-content: space-between; align-items: center; background-color: var(--bg-primary); padding: 6px 12px; border-radius: 4px; border: 1px solid rgba(255, 255, 255, 0.02);">
-                <code style="font-family: var(--mono); font-size: 10.5px; color: var(--text-secondary); word-break: break-all;">5tte7g5hmrXnPSVJTxVo6aMa68cap1SdPgJddJ4d3BGJUnno8xMzKisANiBaL7eMeZKTPJoA4sGEMvrZoGyHP8kS</code>
-                <a href="https://solscan.io/tx/5tte7g5hmrXnPSVJTxVo6aMa68cap1SdPgJddJ4d3BGJUnno8xMzKisANiBaL7eMeZKTPJoA4sGEMvrZoGyHP8kS" target="_blank" style="font-family: var(--mono); font-size: 10px; color: var(--accent-blue); text-decoration: none; margin-left: 12px; white-space: nowrap;">Solscan ↗</a>
+              <div
+                style="display: flex; justify-content: space-between; align-items: center; background-color: var(--bg-primary); padding: 6px 12px; border-radius: 4px; border: 1px solid rgba(255, 255, 255, 0.02);">
+                <code
+                  style="font-family: var(--mono); font-size: 10.5px; color: var(--text-secondary); word-break: break-all;">5tte7g5hmrXnPSVJTxVo6aMa68cap1SdPgJddJ4d3BGJUnno8xMzKisANiBaL7eMeZKTPJoA4sGEMvrZoGyHP8kS</code>
+                <a href="https://solscan.io/tx/5tte7g5hmrXnPSVJTxVo6aMa68cap1SdPgJddJ4d3BGJUnno8xMzKisANiBaL7eMeZKTPJoA4sGEMvrZoGyHP8kS"
+                  target="_blank"
+                  style="font-family: var(--mono); font-size: 10px; color: var(--accent-blue); text-decoration: none; margin-left: 12px; white-space: nowrap;">Solscan
+                  ↗</a>
               </div>
             </div>
           </div>
@@ -1327,7 +1504,9 @@
         <div class="trace-card">
           <div class="trace-hdr">
             <div class="trace-title">
-              <span style="color: var(--accent-amber); font-family: var(--mono); font-size: 11px; font-weight: bold;">[ENTRY 04]</span>
+              <span
+                style="color: var(--accent-amber); font-family: var(--mono); font-size: 11px; font-weight: bold;">[ENTRY
+                04]</span>
               <h3>Bundle 88759dd83e9a2ef46c607fe04e9e9f0f030ccf5f05600b75ea9bd8725a1c2b04</h3>
             </div>
             <div class="trace-meta">
@@ -1335,33 +1514,53 @@
             </div>
           </div>
           <div class="trace-timeline">
-            <div class="timeline-node"><span class="timeline-label">Sub</span> <span class="timeline-val">429055014</span></div>
+            <div class="timeline-node"><span class="timeline-label">Sub</span> <span
+                class="timeline-val">429055014</span></div>
             <div class="timeline-arrow">➔</div>
-            <div class="timeline-node"><span class="timeline-label">Proc</span> <span class="timeline-val">429055015</span></div>
+            <div class="timeline-node"><span class="timeline-label">Proc</span> <span
+                class="timeline-val">429055015</span></div>
             <div class="timeline-arrow">➔</div>
-            <div class="timeline-node"><span class="timeline-label">Conf</span> <span class="timeline-val">429055015</span></div>
+            <div class="timeline-node"><span class="timeline-label">Conf</span> <span
+                class="timeline-val">429055015</span></div>
             <div class="timeline-arrow">➔</div>
-            <div class="timeline-node"><span class="timeline-label">Final</span> <span class="timeline-val">429055015</span></div>
+            <div class="timeline-node"><span class="timeline-label">Final</span> <span
+                class="timeline-val">429055015</span></div>
           </div>
           <div class="trace-metrics-grid">
-            <div class="metric-item"><span class="metric-lbl">Tip Paid</span><span class="metric-val">15,000 lamports</span></div>
-            <div class="metric-item"><span class="metric-lbl">Attempt</span><span class="metric-val">3 (AI Retried)</span></div>
-            <div class="metric-item"><span class="metric-lbl">Operation</span><span class="metric-val">Meteora Remove Liquidity & Meteora Add Liquidity</span></div>
-            <div class="metric-item"><span class="metric-lbl">Confirmation</span><span class="metric-val">Jito Connection</span></div>
+            <div class="metric-item"><span class="metric-lbl">Tip Paid</span><span class="metric-val">15,000
+                lamports</span></div>
+            <div class="metric-item"><span class="metric-lbl">Attempt</span><span class="metric-val">3 (AI
+                Retried)</span></div>
+            <div class="metric-item"><span class="metric-lbl">Operation</span><span class="metric-val">Meteora Remove
+                Liquidity & Meteora Add Liquidity</span></div>
+            <div class="metric-item"><span class="metric-lbl">Confirmation</span><span class="metric-val">Jito
+                Connection</span></div>
           </div>
           <div class="recovery-callout">
-            <strong>AI Diagnostics & Action:</strong> Attempt 1 failed due to <code>bundle_dropped</code> (fallback RPC initiated — Forced public RPC fallback guardrail triggered after attempt 3). The AI Advisor recovered by refreshing blockhash parameters and outbidding competitors to finalize successfully.
+            <strong>AI Diagnostics & Action:</strong> Attempt 1 failed due to <code>bundle_dropped</code> (fallback RPC
+            initiated — Forced public RPC fallback guardrail triggered after attempt 3). The AI Advisor recovered by
+            refreshing blockhash parameters and outbidding competitors to finalize successfully.
           </div>
           <div style="margin-top: 14px; border-top: 1px dashed rgba(255,255,255,0.06); padding-top: 12px;">
             <span class="metric-lbl" style="display: block; margin-bottom: 6px;">Signatures & Explorer Links</span>
             <div style="display: flex; flex-direction: column; gap: 6px;">
-              <div style="display: flex; justify-content: space-between; align-items: center; background-color: var(--bg-primary); padding: 6px 12px; border-radius: 4px; border: 1px solid rgba(255, 255, 255, 0.02);">
-                <code style="font-family: var(--mono); font-size: 10.5px; color: var(--text-secondary); word-break: break-all;">3LenJ49MV9BWfooPPFyGGqiQWvfveAuJz419vpq9TLnnaGSJ3p5jqnUvFhtU6KVihaDi9Ab3s5atqZKugj85zaDj</code>
-                <a href="https://solscan.io/tx/3LenJ49MV9BWfooPPFyGGqiQWvfveAuJz419vpq9TLnnaGSJ3p5jqnUvFhtU6KVihaDi9Ab3s5atqZKugj85zaDj" target="_blank" style="font-family: var(--mono); font-size: 10px; color: var(--accent-blue); text-decoration: none; margin-left: 12px; white-space: nowrap;">Solscan ↗</a>
+              <div
+                style="display: flex; justify-content: space-between; align-items: center; background-color: var(--bg-primary); padding: 6px 12px; border-radius: 4px; border: 1px solid rgba(255, 255, 255, 0.02);">
+                <code
+                  style="font-family: var(--mono); font-size: 10.5px; color: var(--text-secondary); word-break: break-all;">3LenJ49MV9BWfooPPFyGGqiQWvfveAuJz419vpq9TLnnaGSJ3p5jqnUvFhtU6KVihaDi9Ab3s5atqZKugj85zaDj</code>
+                <a href="https://solscan.io/tx/3LenJ49MV9BWfooPPFyGGqiQWvfveAuJz419vpq9TLnnaGSJ3p5jqnUvFhtU6KVihaDi9Ab3s5atqZKugj85zaDj"
+                  target="_blank"
+                  style="font-family: var(--mono); font-size: 10px; color: var(--accent-blue); text-decoration: none; margin-left: 12px; white-space: nowrap;">Solscan
+                  ↗</a>
               </div>
-              <div style="display: flex; justify-content: space-between; align-items: center; background-color: var(--bg-primary); padding: 6px 12px; border-radius: 4px; border: 1px solid rgba(255, 255, 255, 0.02);">
-                <code style="font-family: var(--mono); font-size: 10.5px; color: var(--text-secondary); word-break: break-all;">5VtctK5QfNMGS5Qf4ncPRpBv97hyVRjBMzruSfFK3FAacxkjcxEnEGD53RgYWF6KAUQfJ5itNKZzXrvTJ9J7XEzL</code>
-                <a href="https://solscan.io/tx/5VtctK5QfNMGS5Qf4ncPRpBv97hyVRjBMzruSfFK3FAacxkjcxEnEGD53RgYWF6KAUQfJ5itNKZzXrvTJ9J7XEzL" target="_blank" style="font-family: var(--mono); font-size: 10px; color: var(--accent-blue); text-decoration: none; margin-left: 12px; white-space: nowrap;">Solscan ↗</a>
+              <div
+                style="display: flex; justify-content: space-between; align-items: center; background-color: var(--bg-primary); padding: 6px 12px; border-radius: 4px; border: 1px solid rgba(255, 255, 255, 0.02);">
+                <code
+                  style="font-family: var(--mono); font-size: 10.5px; color: var(--text-secondary); word-break: break-all;">5VtctK5QfNMGS5Qf4ncPRpBv97hyVRjBMzruSfFK3FAacxkjcxEnEGD53RgYWF6KAUQfJ5itNKZzXrvTJ9J7XEzL</code>
+                <a href="https://solscan.io/tx/5VtctK5QfNMGS5Qf4ncPRpBv97hyVRjBMzruSfFK3FAacxkjcxEnEGD53RgYWF6KAUQfJ5itNKZzXrvTJ9J7XEzL"
+                  target="_blank"
+                  style="font-family: var(--mono); font-size: 10px; color: var(--accent-blue); text-decoration: none; margin-left: 12px; white-space: nowrap;">Solscan
+                  ↗</a>
               </div>
             </div>
           </div>
@@ -1371,7 +1570,9 @@
         <div class="trace-card">
           <div class="trace-hdr">
             <div class="trace-title">
-              <span style="color: var(--accent-amber); font-family: var(--mono); font-size: 11px; font-weight: bold;">[ENTRY 05]</span>
+              <span
+                style="color: var(--accent-amber); font-family: var(--mono); font-size: 11px; font-weight: bold;">[ENTRY
+                05]</span>
               <h3>Bundle 143efc2f1d80bdf5d108fce815b53e836d3ca19644270ff2da089f72d3a968cb</h3>
             </div>
             <div class="trace-meta">
@@ -1379,37 +1580,62 @@
             </div>
           </div>
           <div class="trace-timeline">
-            <div class="timeline-node"><span class="timeline-label">Sub</span> <span class="timeline-val">429045955</span></div>
+            <div class="timeline-node"><span class="timeline-label">Sub</span> <span
+                class="timeline-val">429045955</span></div>
             <div class="timeline-arrow">➔</div>
-            <div class="timeline-node"><span class="timeline-label">Proc</span> <span class="timeline-val">429045964</span></div>
+            <div class="timeline-node"><span class="timeline-label">Proc</span> <span
+                class="timeline-val">429045964</span></div>
             <div class="timeline-arrow">➔</div>
-            <div class="timeline-node"><span class="timeline-label">Conf</span> <span class="timeline-val">429045964</span></div>
+            <div class="timeline-node"><span class="timeline-label">Conf</span> <span
+                class="timeline-val">429045964</span></div>
             <div class="timeline-arrow">➔</div>
-            <div class="timeline-node"><span class="timeline-label">Final</span> <span class="timeline-val">429045964</span></div>
+            <div class="timeline-node"><span class="timeline-label">Final</span> <span
+                class="timeline-val">429045964</span></div>
           </div>
           <div class="trace-metrics-grid">
-            <div class="metric-item"><span class="metric-lbl">Tip Paid</span><span class="metric-val">15,000,000 lamports</span></div>
-            <div class="metric-item"><span class="metric-lbl">Attempt</span><span class="metric-val">5 (AI Retried)</span></div>
-            <div class="metric-item"><span class="metric-lbl">Operation</span><span class="metric-val">Meteora Remove Liquidity & Other & Meteora Add Liquidity</span></div>
-            <div class="metric-item"><span class="metric-lbl">Confirmation</span><span class="metric-val">Jito Stream</span></div>
+            <div class="metric-item"><span class="metric-lbl">Tip Paid</span><span class="metric-val">15,000,000
+                lamports</span></div>
+            <div class="metric-item"><span class="metric-lbl">Attempt</span><span class="metric-val">5 (AI
+                Retried)</span></div>
+            <div class="metric-item"><span class="metric-lbl">Operation</span><span class="metric-val">Meteora Remove
+                Liquidity & Other & Meteora Add Liquidity</span></div>
+            <div class="metric-item"><span class="metric-lbl">Confirmation</span><span class="metric-val">Jito
+                Stream</span></div>
           </div>
           <div class="recovery-callout">
-            <strong>AI Diagnostics & Action:</strong> Attempt 1 failed due to <code>TIMEOUT</code> (Blockhash expired or Jito fee war.). The AI Advisor recovered by refreshing blockhash parameters and outbidding competitors to finalize successfully.
+            <strong>AI Diagnostics & Action:</strong> Attempt 1 failed due to <code>TIMEOUT</code> (Blockhash expired or
+            Jito fee war.). The AI Advisor recovered by refreshing blockhash parameters and outbidding competitors to
+            finalize successfully.
           </div>
           <div style="margin-top: 14px; border-top: 1px dashed rgba(255,255,255,0.06); padding-top: 12px;">
             <span class="metric-lbl" style="display: block; margin-bottom: 6px;">Signatures & Explorer Links</span>
             <div style="display: flex; flex-direction: column; gap: 6px;">
-              <div style="display: flex; justify-content: space-between; align-items: center; background-color: var(--bg-primary); padding: 6px 12px; border-radius: 4px; border: 1px solid rgba(255, 255, 255, 0.02);">
-                <code style="font-family: var(--mono); font-size: 10.5px; color: var(--text-secondary); word-break: break-all;">4NuJjjK3wMbDN2zmUabSdi7d6cCPkKgH2KYbitFKdsQ9Wh9AqZTjCT7dUmjeDvJVkVtx6SDbNNegRnKHZnCz311G</code>
-                <a href="https://solscan.io/tx/4NuJjjK3wMbDN2zmUabSdi7d6cCPkKgH2KYbitFKdsQ9Wh9AqZTjCT7dUmjeDvJVkVtx6SDbNNegRnKHZnCz311G" target="_blank" style="font-family: var(--mono); font-size: 10px; color: var(--accent-blue); text-decoration: none; margin-left: 12px; white-space: nowrap;">Solscan ↗</a>
+              <div
+                style="display: flex; justify-content: space-between; align-items: center; background-color: var(--bg-primary); padding: 6px 12px; border-radius: 4px; border: 1px solid rgba(255, 255, 255, 0.02);">
+                <code
+                  style="font-family: var(--mono); font-size: 10.5px; color: var(--text-secondary); word-break: break-all;">4NuJjjK3wMbDN2zmUabSdi7d6cCPkKgH2KYbitFKdsQ9Wh9AqZTjCT7dUmjeDvJVkVtx6SDbNNegRnKHZnCz311G</code>
+                <a href="https://solscan.io/tx/4NuJjjK3wMbDN2zmUabSdi7d6cCPkKgH2KYbitFKdsQ9Wh9AqZTjCT7dUmjeDvJVkVtx6SDbNNegRnKHZnCz311G"
+                  target="_blank"
+                  style="font-family: var(--mono); font-size: 10px; color: var(--accent-blue); text-decoration: none; margin-left: 12px; white-space: nowrap;">Solscan
+                  ↗</a>
               </div>
-              <div style="display: flex; justify-content: space-between; align-items: center; background-color: var(--bg-primary); padding: 6px 12px; border-radius: 4px; border: 1px solid rgba(255, 255, 255, 0.02);">
-                <code style="font-family: var(--mono); font-size: 10.5px; color: var(--text-secondary); word-break: break-all;">4p1YkwxPcQtpkEy9eNZ8mRonBrDhbKDEm3hw2NGAeZu5Gb25MtJtXe36A2Cak23kFq98b1U9UQZYMLaF4WWsM3f4</code>
-                <a href="https://solscan.io/tx/4p1YkwxPcQtpkEy9eNZ8mRonBrDhbKDEm3hw2NGAeZu5Gb25MtJtXe36A2Cak23kFq98b1U9UQZYMLaF4WWsM3f4" target="_blank" style="font-family: var(--mono); font-size: 10px; color: var(--accent-blue); text-decoration: none; margin-left: 12px; white-space: nowrap;">Solscan ↗</a>
+              <div
+                style="display: flex; justify-content: space-between; align-items: center; background-color: var(--bg-primary); padding: 6px 12px; border-radius: 4px; border: 1px solid rgba(255, 255, 255, 0.02);">
+                <code
+                  style="font-family: var(--mono); font-size: 10.5px; color: var(--text-secondary); word-break: break-all;">4p1YkwxPcQtpkEy9eNZ8mRonBrDhbKDEm3hw2NGAeZu5Gb25MtJtXe36A2Cak23kFq98b1U9UQZYMLaF4WWsM3f4</code>
+                <a href="https://solscan.io/tx/4p1YkwxPcQtpkEy9eNZ8mRonBrDhbKDEm3hw2NGAeZu5Gb25MtJtXe36A2Cak23kFq98b1U9UQZYMLaF4WWsM3f4"
+                  target="_blank"
+                  style="font-family: var(--mono); font-size: 10px; color: var(--accent-blue); text-decoration: none; margin-left: 12px; white-space: nowrap;">Solscan
+                  ↗</a>
               </div>
-              <div style="display: flex; justify-content: space-between; align-items: center; background-color: var(--bg-primary); padding: 6px 12px; border-radius: 4px; border: 1px solid rgba(255, 255, 255, 0.02);">
-                <code style="font-family: var(--mono); font-size: 10.5px; color: var(--text-secondary); word-break: break-all;">5zjwZtKxxTXriqxvPLpqL18N5p6GFDPdKbHCkZtidnKjhnyHjMDNF7Yw3HZQfRdL8ykYFnR4zAvzAqd3WEbgPFUM</code>
-                <a href="https://solscan.io/tx/5zjwZtKxxTXriqxvPLpqL18N5p6GFDPdKbHCkZtidnKjhnyHjMDNF7Yw3HZQfRdL8ykYFnR4zAvzAqd3WEbgPFUM" target="_blank" style="font-family: var(--mono); font-size: 10px; color: var(--accent-blue); text-decoration: none; margin-left: 12px; white-space: nowrap;">Solscan ↗</a>
+              <div
+                style="display: flex; justify-content: space-between; align-items: center; background-color: var(--bg-primary); padding: 6px 12px; border-radius: 4px; border: 1px solid rgba(255, 255, 255, 0.02);">
+                <code
+                  style="font-family: var(--mono); font-size: 10.5px; color: var(--text-secondary); word-break: break-all;">5zjwZtKxxTXriqxvPLpqL18N5p6GFDPdKbHCkZtidnKjhnyHjMDNF7Yw3HZQfRdL8ykYFnR4zAvzAqd3WEbgPFUM</code>
+                <a href="https://solscan.io/tx/5zjwZtKxxTXriqxvPLpqL18N5p6GFDPdKbHCkZtidnKjhnyHjMDNF7Yw3HZQfRdL8ykYFnR4zAvzAqd3WEbgPFUM"
+                  target="_blank"
+                  style="font-family: var(--mono); font-size: 10px; color: var(--accent-blue); text-decoration: none; margin-left: 12px; white-space: nowrap;">Solscan
+                  ↗</a>
               </div>
             </div>
           </div>
@@ -1419,7 +1645,9 @@
         <div class="trace-card">
           <div class="trace-hdr">
             <div class="trace-title">
-              <span style="color: var(--accent-blue); font-family: var(--mono); font-size: 11px; font-weight: bold;">[ENTRY 06]</span>
+              <span
+                style="color: var(--accent-blue); font-family: var(--mono); font-size: 11px; font-weight: bold;">[ENTRY
+                06]</span>
               <h3>Bundle 308f6e9629d13bb7265c7b303694d624eb2d0a3aa159949de2f938946a3c5082</h3>
             </div>
             <div class="trace-meta">
@@ -1427,34 +1655,56 @@
             </div>
           </div>
           <div class="trace-timeline">
-            <div class="timeline-node"><span class="timeline-label">Sub</span> <span class="timeline-val">428635810</span></div>
+            <div class="timeline-node"><span class="timeline-label">Sub</span> <span
+                class="timeline-val">428635810</span></div>
             <div class="timeline-arrow">➔</div>
-            <div class="timeline-node"><span class="timeline-label">Proc</span> <span class="timeline-val">428635813</span></div>
+            <div class="timeline-node"><span class="timeline-label">Proc</span> <span
+                class="timeline-val">428635813</span></div>
             <div class="timeline-arrow">➔</div>
-            <div class="timeline-node"><span class="timeline-label">Conf</span> <span class="timeline-val">428635813</span></div>
+            <div class="timeline-node"><span class="timeline-label">Conf</span> <span
+                class="timeline-val">428635813</span></div>
             <div class="timeline-arrow">➔</div>
-            <div class="timeline-node"><span class="timeline-label">Final</span> <span class="timeline-val">428635813</span></div>
+            <div class="timeline-node"><span class="timeline-label">Final</span> <span
+                class="timeline-val">428635813</span></div>
           </div>
           <div class="trace-metrics-grid">
-            <div class="metric-item"><span class="metric-lbl">Tip Paid</span><span class="metric-val">10,375,682 lamports</span></div>
+            <div class="metric-item"><span class="metric-lbl">Tip Paid</span><span class="metric-val">10,375,682
+                lamports</span></div>
             <div class="metric-item"><span class="metric-lbl">Attempt</span><span class="metric-val">1</span></div>
-            <div class="metric-item"><span class="metric-lbl">Operation</span><span class="metric-val">Meteora Remove Liquidity & Other & Meteora Add Liquidity</span></div>
-            <div class="metric-item"><span class="metric-lbl">Confirmation</span><span class="metric-val">Jito Stream</span></div>
+            <div class="metric-item"><span class="metric-lbl">Operation</span><span class="metric-val">Meteora Remove
+                Liquidity & Other & Meteora Add Liquidity</span></div>
+            <div class="metric-item"><span class="metric-lbl">Confirmation</span><span class="metric-val">Jito
+                Stream</span></div>
           </div>
           <div style="margin-top: 14px; border-top: 1px dashed rgba(255,255,255,0.06); padding-top: 12px;">
             <span class="metric-lbl" style="display: block; margin-bottom: 6px;">Signatures & Explorer Links</span>
             <div style="display: flex; flex-direction: column; gap: 6px;">
-              <div style="display: flex; justify-content: space-between; align-items: center; background-color: var(--bg-primary); padding: 6px 12px; border-radius: 4px; border: 1px solid rgba(255, 255, 255, 0.02);">
-                <code style="font-family: var(--mono); font-size: 10.5px; color: var(--text-secondary); word-break: break-all;">279GEZTKT4crCNPj4FzjNNYwQzZXPpvREEiBN8vmfEMFK2osd7YQqLosv1kbscSizRjgFLh4Zo5Ad12vH7oSQ2x9</code>
-                <a href="https://solscan.io/tx/279GEZTKT4crCNPj4FzjNNYwQzZXPpvREEiBN8vmfEMFK2osd7YQqLosv1kbscSizRjgFLh4Zo5Ad12vH7oSQ2x9" target="_blank" style="font-family: var(--mono); font-size: 10px; color: var(--accent-blue); text-decoration: none; margin-left: 12px; white-space: nowrap;">Solscan ↗</a>
+              <div
+                style="display: flex; justify-content: space-between; align-items: center; background-color: var(--bg-primary); padding: 6px 12px; border-radius: 4px; border: 1px solid rgba(255, 255, 255, 0.02);">
+                <code
+                  style="font-family: var(--mono); font-size: 10.5px; color: var(--text-secondary); word-break: break-all;">279GEZTKT4crCNPj4FzjNNYwQzZXPpvREEiBN8vmfEMFK2osd7YQqLosv1kbscSizRjgFLh4Zo5Ad12vH7oSQ2x9</code>
+                <a href="https://solscan.io/tx/279GEZTKT4crCNPj4FzjNNYwQzZXPpvREEiBN8vmfEMFK2osd7YQqLosv1kbscSizRjgFLh4Zo5Ad12vH7oSQ2x9"
+                  target="_blank"
+                  style="font-family: var(--mono); font-size: 10px; color: var(--accent-blue); text-decoration: none; margin-left: 12px; white-space: nowrap;">Solscan
+                  ↗</a>
               </div>
-              <div style="display: flex; justify-content: space-between; align-items: center; background-color: var(--bg-primary); padding: 6px 12px; border-radius: 4px; border: 1px solid rgba(255, 255, 255, 0.02);">
-                <code style="font-family: var(--mono); font-size: 10.5px; color: var(--text-secondary); word-break: break-all;">2ZRTL6ZtqeQG6sD2tW8dH42NB35bjDFtn12GrpfkBcHSsco2Yx8TZDhJax4f2gWaUFVXESDqrXSYJMJrjH3VVtRG</code>
-                <a href="https://solscan.io/tx/2ZRTL6ZtqeQG6sD2tW8dH42NB35bjDFtn12GrpfkBcHSsco2Yx8TZDhJax4f2gWaUFVXESDqrXSYJMJrjH3VVtRG" target="_blank" style="font-family: var(--mono); font-size: 10px; color: var(--accent-blue); text-decoration: none; margin-left: 12px; white-space: nowrap;">Solscan ↗</a>
+              <div
+                style="display: flex; justify-content: space-between; align-items: center; background-color: var(--bg-primary); padding: 6px 12px; border-radius: 4px; border: 1px solid rgba(255, 255, 255, 0.02);">
+                <code
+                  style="font-family: var(--mono); font-size: 10.5px; color: var(--text-secondary); word-break: break-all;">2ZRTL6ZtqeQG6sD2tW8dH42NB35bjDFtn12GrpfkBcHSsco2Yx8TZDhJax4f2gWaUFVXESDqrXSYJMJrjH3VVtRG</code>
+                <a href="https://solscan.io/tx/2ZRTL6ZtqeQG6sD2tW8dH42NB35bjDFtn12GrpfkBcHSsco2Yx8TZDhJax4f2gWaUFVXESDqrXSYJMJrjH3VVtRG"
+                  target="_blank"
+                  style="font-family: var(--mono); font-size: 10px; color: var(--accent-blue); text-decoration: none; margin-left: 12px; white-space: nowrap;">Solscan
+                  ↗</a>
               </div>
-              <div style="display: flex; justify-content: space-between; align-items: center; background-color: var(--bg-primary); padding: 6px 12px; border-radius: 4px; border: 1px solid rgba(255, 255, 255, 0.02);">
-                <code style="font-family: var(--mono); font-size: 10.5px; color: var(--text-secondary); word-break: break-all;">sa51npZvQfpwvQwF8Q8MeShKnXa6E9DZ1F4ogUJQ6norUhXNBz26tfqzU4gH8X6djQWNH1hwEueWEfe5AmmL55X</code>
-                <a href="https://solscan.io/tx/sa51npZvQfpwvQwF8Q8MeShKnXa6E9DZ1F4ogUJQ6norUhXNBz26tfqzU4gH8X6djQWNH1hwEueWEfe5AmmL55X" target="_blank" style="font-family: var(--mono); font-size: 10px; color: var(--accent-blue); text-decoration: none; margin-left: 12px; white-space: nowrap;">Solscan ↗</a>
+              <div
+                style="display: flex; justify-content: space-between; align-items: center; background-color: var(--bg-primary); padding: 6px 12px; border-radius: 4px; border: 1px solid rgba(255, 255, 255, 0.02);">
+                <code
+                  style="font-family: var(--mono); font-size: 10.5px; color: var(--text-secondary); word-break: break-all;">sa51npZvQfpwvQwF8Q8MeShKnXa6E9DZ1F4ogUJQ6norUhXNBz26tfqzU4gH8X6djQWNH1hwEueWEfe5AmmL55X</code>
+                <a href="https://solscan.io/tx/sa51npZvQfpwvQwF8Q8MeShKnXa6E9DZ1F4ogUJQ6norUhXNBz26tfqzU4gH8X6djQWNH1hwEueWEfe5AmmL55X"
+                  target="_blank"
+                  style="font-family: var(--mono); font-size: 10px; color: var(--accent-blue); text-decoration: none; margin-left: 12px; white-space: nowrap;">Solscan
+                  ↗</a>
               </div>
             </div>
           </div>
@@ -1464,7 +1714,9 @@
         <div class="trace-card">
           <div class="trace-hdr">
             <div class="trace-title">
-              <span style="color: var(--accent-blue); font-family: var(--mono); font-size: 11px; font-weight: bold;">[ENTRY 07]</span>
+              <span
+                style="color: var(--accent-blue); font-family: var(--mono); font-size: 11px; font-weight: bold;">[ENTRY
+                07]</span>
               <h3>Bundle 1c8d08b725913a93076c2f8b73984e052bbca48568cbe2ba9683d38fc81d2ad8</h3>
             </div>
             <div class="trace-meta">
@@ -1472,34 +1724,56 @@
             </div>
           </div>
           <div class="trace-timeline">
-            <div class="timeline-node"><span class="timeline-label">Sub</span> <span class="timeline-val">428635758</span></div>
+            <div class="timeline-node"><span class="timeline-label">Sub</span> <span
+                class="timeline-val">428635758</span></div>
             <div class="timeline-arrow">➔</div>
-            <div class="timeline-node"><span class="timeline-label">Proc</span> <span class="timeline-val">428635766</span></div>
+            <div class="timeline-node"><span class="timeline-label">Proc</span> <span
+                class="timeline-val">428635766</span></div>
             <div class="timeline-arrow">➔</div>
-            <div class="timeline-node"><span class="timeline-label">Conf</span> <span class="timeline-val">428635766</span></div>
+            <div class="timeline-node"><span class="timeline-label">Conf</span> <span
+                class="timeline-val">428635766</span></div>
             <div class="timeline-arrow">➔</div>
-            <div class="timeline-node"><span class="timeline-label">Final</span> <span class="timeline-val">428635766</span></div>
+            <div class="timeline-node"><span class="timeline-label">Final</span> <span
+                class="timeline-val">428635766</span></div>
           </div>
           <div class="trace-metrics-grid">
-            <div class="metric-item"><span class="metric-lbl">Tip Paid</span><span class="metric-val">10,417,111 lamports</span></div>
+            <div class="metric-item"><span class="metric-lbl">Tip Paid</span><span class="metric-val">10,417,111
+                lamports</span></div>
             <div class="metric-item"><span class="metric-lbl">Attempt</span><span class="metric-val">1</span></div>
-            <div class="metric-item"><span class="metric-lbl">Operation</span><span class="metric-val">Meteora Remove Liquidity & Other & Meteora Add Liquidity</span></div>
-            <div class="metric-item"><span class="metric-lbl">Confirmation</span><span class="metric-val">Jito Stream</span></div>
+            <div class="metric-item"><span class="metric-lbl">Operation</span><span class="metric-val">Meteora Remove
+                Liquidity & Other & Meteora Add Liquidity</span></div>
+            <div class="metric-item"><span class="metric-lbl">Confirmation</span><span class="metric-val">Jito
+                Stream</span></div>
           </div>
           <div style="margin-top: 14px; border-top: 1px dashed rgba(255,255,255,0.06); padding-top: 12px;">
             <span class="metric-lbl" style="display: block; margin-bottom: 6px;">Signatures & Explorer Links</span>
             <div style="display: flex; flex-direction: column; gap: 6px;">
-              <div style="display: flex; justify-content: space-between; align-items: center; background-color: var(--bg-primary); padding: 6px 12px; border-radius: 4px; border: 1px solid rgba(255, 255, 255, 0.02);">
-                <code style="font-family: var(--mono); font-size: 10.5px; color: var(--text-secondary); word-break: break-all;">3wcVJPRR3sty4m8ZqbvaJ1SEh6HLUyPGYmjdeZ8v5mA2NjHAoJfSYN7kVD8piYn3nXPFvrskjX9nWkZxV5D1Nshk</code>
-                <a href="https://solscan.io/tx/3wcVJPRR3sty4m8ZqbvaJ1SEh6HLUyPGYmjdeZ8v5mA2NjHAoJfSYN7kVD8piYn3nXPFvrskjX9nWkZxV5D1Nshk" target="_blank" style="font-family: var(--mono); font-size: 10px; color: var(--accent-blue); text-decoration: none; margin-left: 12px; white-space: nowrap;">Solscan ↗</a>
+              <div
+                style="display: flex; justify-content: space-between; align-items: center; background-color: var(--bg-primary); padding: 6px 12px; border-radius: 4px; border: 1px solid rgba(255, 255, 255, 0.02);">
+                <code
+                  style="font-family: var(--mono); font-size: 10.5px; color: var(--text-secondary); word-break: break-all;">3wcVJPRR3sty4m8ZqbvaJ1SEh6HLUyPGYmjdeZ8v5mA2NjHAoJfSYN7kVD8piYn3nXPFvrskjX9nWkZxV5D1Nshk</code>
+                <a href="https://solscan.io/tx/3wcVJPRR3sty4m8ZqbvaJ1SEh6HLUyPGYmjdeZ8v5mA2NjHAoJfSYN7kVD8piYn3nXPFvrskjX9nWkZxV5D1Nshk"
+                  target="_blank"
+                  style="font-family: var(--mono); font-size: 10px; color: var(--accent-blue); text-decoration: none; margin-left: 12px; white-space: nowrap;">Solscan
+                  ↗</a>
               </div>
-              <div style="display: flex; justify-content: space-between; align-items: center; background-color: var(--bg-primary); padding: 6px 12px; border-radius: 4px; border: 1px solid rgba(255, 255, 255, 0.02);">
-                <code style="font-family: var(--mono); font-size: 10.5px; color: var(--text-secondary); word-break: break-all;">4Zeax1DQVYQnumee23rWppV1PxQ2WUjceHExZzUwYqcaeLNDiz93ZDnAX4UYf1B9DwPuw27NTGW7v7BQcAiCbv1u</code>
-                <a href="https://solscan.io/tx/4Zeax1DQVYQnumee23rWppV1PxQ2WUjceHExZzUwYqcaeLNDiz93ZDnAX4UYf1B9DwPuw27NTGW7v7BQcAiCbv1u" target="_blank" style="font-family: var(--mono); font-size: 10px; color: var(--accent-blue); text-decoration: none; margin-left: 12px; white-space: nowrap;">Solscan ↗</a>
+              <div
+                style="display: flex; justify-content: space-between; align-items: center; background-color: var(--bg-primary); padding: 6px 12px; border-radius: 4px; border: 1px solid rgba(255, 255, 255, 0.02);">
+                <code
+                  style="font-family: var(--mono); font-size: 10.5px; color: var(--text-secondary); word-break: break-all;">4Zeax1DQVYQnumee23rWppV1PxQ2WUjceHExZzUwYqcaeLNDiz93ZDnAX4UYf1B9DwPuw27NTGW7v7BQcAiCbv1u</code>
+                <a href="https://solscan.io/tx/4Zeax1DQVYQnumee23rWppV1PxQ2WUjceHExZzUwYqcaeLNDiz93ZDnAX4UYf1B9DwPuw27NTGW7v7BQcAiCbv1u"
+                  target="_blank"
+                  style="font-family: var(--mono); font-size: 10px; color: var(--accent-blue); text-decoration: none; margin-left: 12px; white-space: nowrap;">Solscan
+                  ↗</a>
               </div>
-              <div style="display: flex; justify-content: space-between; align-items: center; background-color: var(--bg-primary); padding: 6px 12px; border-radius: 4px; border: 1px solid rgba(255, 255, 255, 0.02);">
-                <code style="font-family: var(--mono); font-size: 10.5px; color: var(--text-secondary); word-break: break-all;">UWKJ6T2mHukPpPR9cW3hzubtYGdTgjWFqHoXSQYe9NcuCGByS4rw718NWxj8JdYJ3fHLfAPvgkfDctaQNzgzi7u</code>
-                <a href="https://solscan.io/tx/UWKJ6T2mHukPpPR9cW3hzubtYGdTgjWFqHoXSQYe9NcuCGByS4rw718NWxj8JdYJ3fHLfAPvgkfDctaQNzgzi7u" target="_blank" style="font-family: var(--mono); font-size: 10px; color: var(--accent-blue); text-decoration: none; margin-left: 12px; white-space: nowrap;">Solscan ↗</a>
+              <div
+                style="display: flex; justify-content: space-between; align-items: center; background-color: var(--bg-primary); padding: 6px 12px; border-radius: 4px; border: 1px solid rgba(255, 255, 255, 0.02);">
+                <code
+                  style="font-family: var(--mono); font-size: 10.5px; color: var(--text-secondary); word-break: break-all;">UWKJ6T2mHukPpPR9cW3hzubtYGdTgjWFqHoXSQYe9NcuCGByS4rw718NWxj8JdYJ3fHLfAPvgkfDctaQNzgzi7u</code>
+                <a href="https://solscan.io/tx/UWKJ6T2mHukPpPR9cW3hzubtYGdTgjWFqHoXSQYe9NcuCGByS4rw718NWxj8JdYJ3fHLfAPvgkfDctaQNzgzi7u"
+                  target="_blank"
+                  style="font-family: var(--mono); font-size: 10px; color: var(--accent-blue); text-decoration: none; margin-left: 12px; white-space: nowrap;">Solscan
+                  ↗</a>
               </div>
             </div>
           </div>
@@ -1509,7 +1783,9 @@
         <div class="trace-card">
           <div class="trace-hdr">
             <div class="trace-title">
-              <span style="color: var(--accent-blue); font-family: var(--mono); font-size: 11px; font-weight: bold;">[ENTRY 08]</span>
+              <span
+                style="color: var(--accent-blue); font-family: var(--mono); font-size: 11px; font-weight: bold;">[ENTRY
+                08]</span>
               <h3>Bundle 5f35b7cd873816221f672eecd6cfe691edab7b9c5e35216a59edb6afd2553ae0</h3>
             </div>
             <div class="trace-meta">
@@ -1517,34 +1793,56 @@
             </div>
           </div>
           <div class="trace-timeline">
-            <div class="timeline-node"><span class="timeline-label">Sub</span> <span class="timeline-val">428632708</span></div>
+            <div class="timeline-node"><span class="timeline-label">Sub</span> <span
+                class="timeline-val">428632708</span></div>
             <div class="timeline-arrow">➔</div>
-            <div class="timeline-node"><span class="timeline-label">Proc</span> <span class="timeline-val">428632712</span></div>
+            <div class="timeline-node"><span class="timeline-label">Proc</span> <span
+                class="timeline-val">428632712</span></div>
             <div class="timeline-arrow">➔</div>
-            <div class="timeline-node"><span class="timeline-label">Conf</span> <span class="timeline-val">428632712</span></div>
+            <div class="timeline-node"><span class="timeline-label">Conf</span> <span
+                class="timeline-val">428632712</span></div>
             <div class="timeline-arrow">➔</div>
-            <div class="timeline-node"><span class="timeline-label">Final</span> <span class="timeline-val">428632712</span></div>
+            <div class="timeline-node"><span class="timeline-label">Final</span> <span
+                class="timeline-val">428632712</span></div>
           </div>
           <div class="trace-metrics-grid">
-            <div class="metric-item"><span class="metric-lbl">Tip Paid</span><span class="metric-val">10,963,089 lamports</span></div>
+            <div class="metric-item"><span class="metric-lbl">Tip Paid</span><span class="metric-val">10,963,089
+                lamports</span></div>
             <div class="metric-item"><span class="metric-lbl">Attempt</span><span class="metric-val">1</span></div>
-            <div class="metric-item"><span class="metric-lbl">Operation</span><span class="metric-val">Meteora Remove Liquidity & Other & Meteora Add Liquidity</span></div>
-            <div class="metric-item"><span class="metric-lbl">Confirmation</span><span class="metric-val">Public RPC Fallback</span></div>
+            <div class="metric-item"><span class="metric-lbl">Operation</span><span class="metric-val">Meteora Remove
+                Liquidity & Other & Meteora Add Liquidity</span></div>
+            <div class="metric-item"><span class="metric-lbl">Confirmation</span><span class="metric-val">Public RPC
+                Fallback</span></div>
           </div>
           <div style="margin-top: 14px; border-top: 1px dashed rgba(255,255,255,0.06); padding-top: 12px;">
             <span class="metric-lbl" style="display: block; margin-bottom: 6px;">Signatures & Explorer Links</span>
             <div style="display: flex; flex-direction: column; gap: 6px;">
-              <div style="display: flex; justify-content: space-between; align-items: center; background-color: var(--bg-primary); padding: 6px 12px; border-radius: 4px; border: 1px solid rgba(255, 255, 255, 0.02);">
-                <code style="font-family: var(--mono); font-size: 10.5px; color: var(--text-secondary); word-break: break-all;">2Z59PQ5UxuuzeyQjHQ3yTYAogxGzi6nidQjXv5sUtFiGYJPcZGReP3tEL7D6yoY3ZRqxqR71shzey2BnEoKaeJq</code>
-                <a href="https://solscan.io/tx/2Z59PQ5UxuuzeyQjHQ3yTYAogxGzi6nidQjXv5sUtFiGYJPcZGReP3tEL7D6yoY3ZRqxqR71shzey2BnEoKaeJq" target="_blank" style="font-family: var(--mono); font-size: 10px; color: var(--accent-blue); text-decoration: none; margin-left: 12px; white-space: nowrap;">Solscan ↗</a>
+              <div
+                style="display: flex; justify-content: space-between; align-items: center; background-color: var(--bg-primary); padding: 6px 12px; border-radius: 4px; border: 1px solid rgba(255, 255, 255, 0.02);">
+                <code
+                  style="font-family: var(--mono); font-size: 10.5px; color: var(--text-secondary); word-break: break-all;">2Z59PQ5UxuuzeyQjHQ3yTYAogxGzi6nidQjXv5sUtFiGYJPcZGReP3tEL7D6yoY3ZRqxqR71shzey2BnEoKaeJq</code>
+                <a href="https://solscan.io/tx/2Z59PQ5UxuuzeyQjHQ3yTYAogxGzi6nidQjXv5sUtFiGYJPcZGReP3tEL7D6yoY3ZRqxqR71shzey2BnEoKaeJq"
+                  target="_blank"
+                  style="font-family: var(--mono); font-size: 10px; color: var(--accent-blue); text-decoration: none; margin-left: 12px; white-space: nowrap;">Solscan
+                  ↗</a>
               </div>
-              <div style="display: flex; justify-content: space-between; align-items: center; background-color: var(--bg-primary); padding: 6px 12px; border-radius: 4px; border: 1px solid rgba(255, 255, 255, 0.02);">
-                <code style="font-family: var(--mono); font-size: 10.5px; color: var(--text-secondary); word-break: break-all;">3e6gSbWn6xmnY4mW62YBWVgVpDhbcUfXZ2KMiXVhagtK1NhedKX18TZWj5BoZZtnKNW889v4YKi2kueZkkRmr1wf</code>
-                <a href="https://solscan.io/tx/3e6gSbWn6xmnY4mW62YBWVgVpDhbcUfXZ2KMiXVhagtK1NhedKX18TZWj5BoZZtnKNW889v4YKi2kueZkkRmr1wf" target="_blank" style="font-family: var(--mono); font-size: 10px; color: var(--accent-blue); text-decoration: none; margin-left: 12px; white-space: nowrap;">Solscan ↗</a>
+              <div
+                style="display: flex; justify-content: space-between; align-items: center; background-color: var(--bg-primary); padding: 6px 12px; border-radius: 4px; border: 1px solid rgba(255, 255, 255, 0.02);">
+                <code
+                  style="font-family: var(--mono); font-size: 10.5px; color: var(--text-secondary); word-break: break-all;">3e6gSbWn6xmnY4mW62YBWVgVpDhbcUfXZ2KMiXVhagtK1NhedKX18TZWj5BoZZtnKNW889v4YKi2kueZkkRmr1wf</code>
+                <a href="https://solscan.io/tx/3e6gSbWn6xmnY4mW62YBWVgVpDhbcUfXZ2KMiXVhagtK1NhedKX18TZWj5BoZZtnKNW889v4YKi2kueZkkRmr1wf"
+                  target="_blank"
+                  style="font-family: var(--mono); font-size: 10px; color: var(--accent-blue); text-decoration: none; margin-left: 12px; white-space: nowrap;">Solscan
+                  ↗</a>
               </div>
-              <div style="display: flex; justify-content: space-between; align-items: center; background-color: var(--bg-primary); padding: 6px 12px; border-radius: 4px; border: 1px solid rgba(255, 255, 255, 0.02);">
-                <code style="font-family: var(--mono); font-size: 10.5px; color: var(--text-secondary); word-break: break-all;">Uyh8o5cANS81tHK5huMexzycamZhHSGcKauwzdcc3q7VkmmBtvhhYxnb8364k6zTYfbxCrCDrWFEshdgeoBHifC</code>
-                <a href="https://solscan.io/tx/Uyh8o5cANS81tHK5huMexzycamZhHSGcKauwzdcc3q7VkmmBtvhhYxnb8364k6zTYfbxCrCDrWFEshdgeoBHifC" target="_blank" style="font-family: var(--mono); font-size: 10px; color: var(--accent-blue); text-decoration: none; margin-left: 12px; white-space: nowrap;">Solscan ↗</a>
+              <div
+                style="display: flex; justify-content: space-between; align-items: center; background-color: var(--bg-primary); padding: 6px 12px; border-radius: 4px; border: 1px solid rgba(255, 255, 255, 0.02);">
+                <code
+                  style="font-family: var(--mono); font-size: 10.5px; color: var(--text-secondary); word-break: break-all;">Uyh8o5cANS81tHK5huMexzycamZhHSGcKauwzdcc3q7VkmmBtvhhYxnb8364k6zTYfbxCrCDrWFEshdgeoBHifC</code>
+                <a href="https://solscan.io/tx/Uyh8o5cANS81tHK5huMexzycamZhHSGcKauwzdcc3q7VkmmBtvhhYxnb8364k6zTYfbxCrCDrWFEshdgeoBHifC"
+                  target="_blank"
+                  style="font-family: var(--mono); font-size: 10px; color: var(--accent-blue); text-decoration: none; margin-left: 12px; white-space: nowrap;">Solscan
+                  ↗</a>
               </div>
             </div>
           </div>
@@ -1554,7 +1852,9 @@
         <div class="trace-card">
           <div class="trace-hdr">
             <div class="trace-title">
-              <span style="color: var(--accent-blue); font-family: var(--mono); font-size: 11px; font-weight: bold;">[ENTRY 09]</span>
+              <span
+                style="color: var(--accent-blue); font-family: var(--mono); font-size: 11px; font-weight: bold;">[ENTRY
+                09]</span>
               <h3>Bundle 3bfbb722bb7b11aab8e4597e9659e11b95b91910630830e86548f32bf895c247</h3>
             </div>
             <div class="trace-meta">
@@ -1562,34 +1862,56 @@
             </div>
           </div>
           <div class="trace-timeline">
-            <div class="timeline-node"><span class="timeline-label">Sub</span> <span class="timeline-val">428628204</span></div>
+            <div class="timeline-node"><span class="timeline-label">Sub</span> <span
+                class="timeline-val">428628204</span></div>
             <div class="timeline-arrow">➔</div>
-            <div class="timeline-node"><span class="timeline-label">Proc</span> <span class="timeline-val">428628211</span></div>
+            <div class="timeline-node"><span class="timeline-label">Proc</span> <span
+                class="timeline-val">428628211</span></div>
             <div class="timeline-arrow">➔</div>
-            <div class="timeline-node"><span class="timeline-label">Conf</span> <span class="timeline-val">428628211</span></div>
+            <div class="timeline-node"><span class="timeline-label">Conf</span> <span
+                class="timeline-val">428628211</span></div>
             <div class="timeline-arrow">➔</div>
-            <div class="timeline-node"><span class="timeline-label">Final</span> <span class="timeline-val">428628211</span></div>
+            <div class="timeline-node"><span class="timeline-label">Final</span> <span
+                class="timeline-val">428628211</span></div>
           </div>
           <div class="trace-metrics-grid">
-            <div class="metric-item"><span class="metric-lbl">Tip Paid</span><span class="metric-val">6,052,744 lamports</span></div>
+            <div class="metric-item"><span class="metric-lbl">Tip Paid</span><span class="metric-val">6,052,744
+                lamports</span></div>
             <div class="metric-item"><span class="metric-lbl">Attempt</span><span class="metric-val">1</span></div>
-            <div class="metric-item"><span class="metric-lbl">Operation</span><span class="metric-val">Meteora Remove Liquidity & Other & Meteora Add Liquidity</span></div>
-            <div class="metric-item"><span class="metric-lbl">Confirmation</span><span class="metric-val">Jito Stream</span></div>
+            <div class="metric-item"><span class="metric-lbl">Operation</span><span class="metric-val">Meteora Remove
+                Liquidity & Other & Meteora Add Liquidity</span></div>
+            <div class="metric-item"><span class="metric-lbl">Confirmation</span><span class="metric-val">Jito
+                Stream</span></div>
           </div>
           <div style="margin-top: 14px; border-top: 1px dashed rgba(255,255,255,0.06); padding-top: 12px;">
             <span class="metric-lbl" style="display: block; margin-bottom: 6px;">Signatures & Explorer Links</span>
             <div style="display: flex; flex-direction: column; gap: 6px;">
-              <div style="display: flex; justify-content: space-between; align-items: center; background-color: var(--bg-primary); padding: 6px 12px; border-radius: 4px; border: 1px solid rgba(255, 255, 255, 0.02);">
-                <code style="font-family: var(--mono); font-size: 10.5px; color: var(--text-secondary); word-break: break-all;">2PDtiALfQYC4xCLgS3Yzp53REaP7RuTQwPLDazfueX7jvqkgySioJdhdTx1K2hmWosm2trnwiJzajECRsaGkiiVm</code>
-                <a href="https://solscan.io/tx/2PDtiALfQYC4xCLgS3Yzp53REaP7RuTQwPLDazfueX7jvqkgySioJdhdTx1K2hmWosm2trnwiJzajECRsaGkiiVm" target="_blank" style="font-family: var(--mono); font-size: 10px; color: var(--accent-blue); text-decoration: none; margin-left: 12px; white-space: nowrap;">Solscan ↗</a>
+              <div
+                style="display: flex; justify-content: space-between; align-items: center; background-color: var(--bg-primary); padding: 6px 12px; border-radius: 4px; border: 1px solid rgba(255, 255, 255, 0.02);">
+                <code
+                  style="font-family: var(--mono); font-size: 10.5px; color: var(--text-secondary); word-break: break-all;">2PDtiALfQYC4xCLgS3Yzp53REaP7RuTQwPLDazfueX7jvqkgySioJdhdTx1K2hmWosm2trnwiJzajECRsaGkiiVm</code>
+                <a href="https://solscan.io/tx/2PDtiALfQYC4xCLgS3Yzp53REaP7RuTQwPLDazfueX7jvqkgySioJdhdTx1K2hmWosm2trnwiJzajECRsaGkiiVm"
+                  target="_blank"
+                  style="font-family: var(--mono); font-size: 10px; color: var(--accent-blue); text-decoration: none; margin-left: 12px; white-space: nowrap;">Solscan
+                  ↗</a>
               </div>
-              <div style="display: flex; justify-content: space-between; align-items: center; background-color: var(--bg-primary); padding: 6px 12px; border-radius: 4px; border: 1px solid rgba(255, 255, 255, 0.02);">
-                <code style="font-family: var(--mono); font-size: 10.5px; color: var(--text-secondary); word-break: break-all;">2fKXZA4rPRqP5yNanuwF3sapnYi8Y5EK1TSSVUVHCqZvFjCtXhuHexxvQmwgxk254Fp1m9DvhtuGpXtEf32V379i</code>
-                <a href="https://solscan.io/tx/2fKXZA4rPRqP5yNanuwF3sapnYi8Y5EK1TSSVUVHCqZvFjCtXhuHexxvQmwgxk254Fp1m9DvhtuGpXtEf32V379i" target="_blank" style="font-family: var(--mono); font-size: 10px; color: var(--accent-blue); text-decoration: none; margin-left: 12px; white-space: nowrap;">Solscan ↗</a>
+              <div
+                style="display: flex; justify-content: space-between; align-items: center; background-color: var(--bg-primary); padding: 6px 12px; border-radius: 4px; border: 1px solid rgba(255, 255, 255, 0.02);">
+                <code
+                  style="font-family: var(--mono); font-size: 10.5px; color: var(--text-secondary); word-break: break-all;">2fKXZA4rPRqP5yNanuwF3sapnYi8Y5EK1TSSVUVHCqZvFjCtXhuHexxvQmwgxk254Fp1m9DvhtuGpXtEf32V379i</code>
+                <a href="https://solscan.io/tx/2fKXZA4rPRqP5yNanuwF3sapnYi8Y5EK1TSSVUVHCqZvFjCtXhuHexxvQmwgxk254Fp1m9DvhtuGpXtEf32V379i"
+                  target="_blank"
+                  style="font-family: var(--mono); font-size: 10px; color: var(--accent-blue); text-decoration: none; margin-left: 12px; white-space: nowrap;">Solscan
+                  ↗</a>
               </div>
-              <div style="display: flex; justify-content: space-between; align-items: center; background-color: var(--bg-primary); padding: 6px 12px; border-radius: 4px; border: 1px solid rgba(255, 255, 255, 0.02);">
-                <code style="font-family: var(--mono); font-size: 10.5px; color: var(--text-secondary); word-break: break-all;">539jhaoRW4DkFMSSmyLFMwxcDrysZf242EK7YZXHbegcL22WseSz8u83rWTVoKBHsKVt5HbUBZBwT3G2ZejyUuGa</code>
-                <a href="https://solscan.io/tx/539jhaoRW4DkFMSSmyLFMwxcDrysZf242EK7YZXHbegcL22WseSz8u83rWTVoKBHsKVt5HbUBZBwT3G2ZejyUuGa" target="_blank" style="font-family: var(--mono); font-size: 10px; color: var(--accent-blue); text-decoration: none; margin-left: 12px; white-space: nowrap;">Solscan ↗</a>
+              <div
+                style="display: flex; justify-content: space-between; align-items: center; background-color: var(--bg-primary); padding: 6px 12px; border-radius: 4px; border: 1px solid rgba(255, 255, 255, 0.02);">
+                <code
+                  style="font-family: var(--mono); font-size: 10.5px; color: var(--text-secondary); word-break: break-all;">539jhaoRW4DkFMSSmyLFMwxcDrysZf242EK7YZXHbegcL22WseSz8u83rWTVoKBHsKVt5HbUBZBwT3G2ZejyUuGa</code>
+                <a href="https://solscan.io/tx/539jhaoRW4DkFMSSmyLFMwxcDrysZf242EK7YZXHbegcL22WseSz8u83rWTVoKBHsKVt5HbUBZBwT3G2ZejyUuGa"
+                  target="_blank"
+                  style="font-family: var(--mono); font-size: 10px; color: var(--accent-blue); text-decoration: none; margin-left: 12px; white-space: nowrap;">Solscan
+                  ↗</a>
               </div>
             </div>
           </div>
@@ -1599,7 +1921,9 @@
         <div class="trace-card">
           <div class="trace-hdr">
             <div class="trace-title">
-              <span style="color: var(--accent-blue); font-family: var(--mono); font-size: 11px; font-weight: bold;">[ENTRY 10]</span>
+              <span
+                style="color: var(--accent-blue); font-family: var(--mono); font-size: 11px; font-weight: bold;">[ENTRY
+                10]</span>
               <h3>Bundle 3bad93b2ad3c6d3bf41a0c04227f1d4c392ecd74e3c794e6d1678465bc9367a1</h3>
             </div>
             <div class="trace-meta">
@@ -1607,34 +1931,56 @@
             </div>
           </div>
           <div class="trace-timeline">
-            <div class="timeline-node"><span class="timeline-label">Sub</span> <span class="timeline-val">428627097</span></div>
+            <div class="timeline-node"><span class="timeline-label">Sub</span> <span
+                class="timeline-val">428627097</span></div>
             <div class="timeline-arrow">➔</div>
-            <div class="timeline-node"><span class="timeline-label">Proc</span> <span class="timeline-val">428627108</span></div>
+            <div class="timeline-node"><span class="timeline-label">Proc</span> <span
+                class="timeline-val">428627108</span></div>
             <div class="timeline-arrow">➔</div>
-            <div class="timeline-node"><span class="timeline-label">Conf</span> <span class="timeline-val">428627108</span></div>
+            <div class="timeline-node"><span class="timeline-label">Conf</span> <span
+                class="timeline-val">428627108</span></div>
             <div class="timeline-arrow">➔</div>
-            <div class="timeline-node"><span class="timeline-label">Final</span> <span class="timeline-val">428627108</span></div>
+            <div class="timeline-node"><span class="timeline-label">Final</span> <span
+                class="timeline-val">428627108</span></div>
           </div>
           <div class="trace-metrics-grid">
-            <div class="metric-item"><span class="metric-lbl">Tip Paid</span><span class="metric-val">6,503,220 lamports</span></div>
+            <div class="metric-item"><span class="metric-lbl">Tip Paid</span><span class="metric-val">6,503,220
+                lamports</span></div>
             <div class="metric-item"><span class="metric-lbl">Attempt</span><span class="metric-val">1</span></div>
-            <div class="metric-item"><span class="metric-lbl">Operation</span><span class="metric-val">Meteora Remove Liquidity & Other & Meteora Add Liquidity</span></div>
-            <div class="metric-item"><span class="metric-lbl">Confirmation</span><span class="metric-val">Jito Stream</span></div>
+            <div class="metric-item"><span class="metric-lbl">Operation</span><span class="metric-val">Meteora Remove
+                Liquidity & Other & Meteora Add Liquidity</span></div>
+            <div class="metric-item"><span class="metric-lbl">Confirmation</span><span class="metric-val">Jito
+                Stream</span></div>
           </div>
           <div style="margin-top: 14px; border-top: 1px dashed rgba(255,255,255,0.06); padding-top: 12px;">
             <span class="metric-lbl" style="display: block; margin-bottom: 6px;">Signatures & Explorer Links</span>
             <div style="display: flex; flex-direction: column; gap: 6px;">
-              <div style="display: flex; justify-content: space-between; align-items: center; background-color: var(--bg-primary); padding: 6px 12px; border-radius: 4px; border: 1px solid rgba(255, 255, 255, 0.02);">
-                <code style="font-family: var(--mono); font-size: 10.5px; color: var(--text-secondary); word-break: break-all;">3FU6dfHxePAif4HGqR5pNc3578iGbM78oUCCVjQSo6s5dP2iF4efERjKvJfo6yQC8nFZxy6EQEC7goipD2zjokB6</code>
-                <a href="https://solscan.io/tx/3FU6dfHxePAif4HGqR5pNc3578iGbM78oUCCVjQSo6s5dP2iF4efERjKvJfo6yQC8nFZxy6EQEC7goipD2zjokB6" target="_blank" style="font-family: var(--mono); font-size: 10px; color: var(--accent-blue); text-decoration: none; margin-left: 12px; white-space: nowrap;">Solscan ↗</a>
+              <div
+                style="display: flex; justify-content: space-between; align-items: center; background-color: var(--bg-primary); padding: 6px 12px; border-radius: 4px; border: 1px solid rgba(255, 255, 255, 0.02);">
+                <code
+                  style="font-family: var(--mono); font-size: 10.5px; color: var(--text-secondary); word-break: break-all;">3FU6dfHxePAif4HGqR5pNc3578iGbM78oUCCVjQSo6s5dP2iF4efERjKvJfo6yQC8nFZxy6EQEC7goipD2zjokB6</code>
+                <a href="https://solscan.io/tx/3FU6dfHxePAif4HGqR5pNc3578iGbM78oUCCVjQSo6s5dP2iF4efERjKvJfo6yQC8nFZxy6EQEC7goipD2zjokB6"
+                  target="_blank"
+                  style="font-family: var(--mono); font-size: 10px; color: var(--accent-blue); text-decoration: none; margin-left: 12px; white-space: nowrap;">Solscan
+                  ↗</a>
               </div>
-              <div style="display: flex; justify-content: space-between; align-items: center; background-color: var(--bg-primary); padding: 6px 12px; border-radius: 4px; border: 1px solid rgba(255, 255, 255, 0.02);">
-                <code style="font-family: var(--mono); font-size: 10.5px; color: var(--text-secondary); word-break: break-all;">3JFnUdi8bGEKQp5mp2nzNjsUXQb6jCGnTGvrcjTEUJxeKjCtYh1Gv3RQPGC8xuAeLoKnpNyp1QhF4PcvK1GASqGG</code>
-                <a href="https://solscan.io/tx/3JFnUdi8bGEKQp5mp2nzNjsUXQb6jCGnTGvrcjTEUJxeKjCtYh1Gv3RQPGC8xuAeLoKnpNyp1QhF4PcvK1GASqGG" target="_blank" style="font-family: var(--mono); font-size: 10px; color: var(--accent-blue); text-decoration: none; margin-left: 12px; white-space: nowrap;">Solscan ↗</a>
+              <div
+                style="display: flex; justify-content: space-between; align-items: center; background-color: var(--bg-primary); padding: 6px 12px; border-radius: 4px; border: 1px solid rgba(255, 255, 255, 0.02);">
+                <code
+                  style="font-family: var(--mono); font-size: 10.5px; color: var(--text-secondary); word-break: break-all;">3JFnUdi8bGEKQp5mp2nzNjsUXQb6jCGnTGvrcjTEUJxeKjCtYh1Gv3RQPGC8xuAeLoKnpNyp1QhF4PcvK1GASqGG</code>
+                <a href="https://solscan.io/tx/3JFnUdi8bGEKQp5mp2nzNjsUXQb6jCGnTGvrcjTEUJxeKjCtYh1Gv3RQPGC8xuAeLoKnpNyp1QhF4PcvK1GASqGG"
+                  target="_blank"
+                  style="font-family: var(--mono); font-size: 10px; color: var(--accent-blue); text-decoration: none; margin-left: 12px; white-space: nowrap;">Solscan
+                  ↗</a>
               </div>
-              <div style="display: flex; justify-content: space-between; align-items: center; background-color: var(--bg-primary); padding: 6px 12px; border-radius: 4px; border: 1px solid rgba(255, 255, 255, 0.02);">
-                <code style="font-family: var(--mono); font-size: 10.5px; color: var(--text-secondary); word-break: break-all;">4K2ei2eZtURL1Hk9TSvWhG3LbVz4wRN9kQDrs3QEJdTdp9vESpLPjb9tZe4SGVGx1neyFuKnW1DKPJJBBBCugjib</code>
-                <a href="https://solscan.io/tx/4K2ei2eZtURL1Hk9TSvWhG3LbVz4wRN9kQDrs3QEJdTdp9vESpLPjb9tZe4SGVGx1neyFuKnW1DKPJJBBBCugjib" target="_blank" style="font-family: var(--mono); font-size: 10px; color: var(--accent-blue); text-decoration: none; margin-left: 12px; white-space: nowrap;">Solscan ↗</a>
+              <div
+                style="display: flex; justify-content: space-between; align-items: center; background-color: var(--bg-primary); padding: 6px 12px; border-radius: 4px; border: 1px solid rgba(255, 255, 255, 0.02);">
+                <code
+                  style="font-family: var(--mono); font-size: 10.5px; color: var(--text-secondary); word-break: break-all;">4K2ei2eZtURL1Hk9TSvWhG3LbVz4wRN9kQDrs3QEJdTdp9vESpLPjb9tZe4SGVGx1neyFuKnW1DKPJJBBBCugjib</code>
+                <a href="https://solscan.io/tx/4K2ei2eZtURL1Hk9TSvWhG3LbVz4wRN9kQDrs3QEJdTdp9vESpLPjb9tZe4SGVGx1neyFuKnW1DKPJJBBBCugjib"
+                  target="_blank"
+                  style="font-family: var(--mono); font-size: 10px; color: var(--accent-blue); text-decoration: none; margin-left: 12px; white-space: nowrap;">Solscan
+                  ↗</a>
               </div>
             </div>
           </div>

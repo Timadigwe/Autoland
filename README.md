@@ -87,6 +87,29 @@ If a transaction fails to progress, the system classifies the exact failure:
 * **Compute Exceeded**: Transaction exceeded the allocated compute limits.
 * **Bundle Failure**: Validator dropped the Jito bundle (e.g. leader skip or simulation error).
 
+### 7. Asynchronous Telemetry & Event Hooks
+The `AutoLand` client extends Node's `EventEmitter` to stream telemetry, execution events, and AI decisions in a completely non-blocking, asynchronous manner. This allows developers to easily attach dashboards, notification alerts, or database logging handlers without impacting the bot's microsecond-sensitive transaction submission execution path.
+
+Example event registration:
+```typescript
+const client = new AutoLand({ connection });
+
+// Listen for real-time congestion and competitor fee updates
+client.on("telemetry_update", (data) => {
+  console.log(`Live Slot: ${data.slot} | Competitor Tip/CU: ${data.maxCompetitorTipPerCU}`);
+});
+
+// Monitor Jito bundle submissions
+client.on("bundle_submitted", (data) => {
+  console.log(`[Submitted] Bundle ID: ${data.bundleId} | Tip: ${data.tipLamports} lamports`);
+});
+
+// Track AI Advisor diagnostics and decisions
+client.on("ai_decision", (data) => {
+  console.log(`[AI Advisor] Diagnosis: ${data.decision.diagnosis} | Action: ${data.decision.action}`);
+});
+```
+
 ---
 
 ## Repository Structure

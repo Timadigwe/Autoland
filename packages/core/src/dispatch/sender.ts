@@ -256,6 +256,7 @@ export interface DispatchContext {
   tipFloor: TipFloorService;
   agent: Agent;
   jito: JitoClient;
+  emit?: (event: string, ...args: any[]) => boolean;
 }
 
 export class BundleDispatcher {
@@ -591,6 +592,15 @@ export class BundleDispatcher {
             });
           }
 
+          if (this.ctx.emit) {
+            this.ctx.emit("simulation_failed", {
+              bundleId: simBundleId,
+              signatures: built.signatures,
+              attempt: ctx.attempt,
+              error: errorLogs
+            });
+          }
+
           return {
             bundleId: simBundleId,
             landed: false,
@@ -612,6 +622,17 @@ export class BundleDispatcher {
         try {
           result = await submitBundle(built);
           if (lifecycle) lifecycle.track(result, ctx.attempt, currentSlot);
+
+          if (this.ctx.emit) {
+            this.ctx.emit("bundle_submitted", {
+              attempt: ctx.attempt,
+              bundleId: result.bundleId,
+              signatures: result.signatures,
+              tipLamports: result.tipLamports,
+              tipAccount: result.tipAccount,
+              slot: currentSlot
+            });
+          }
 
           this.jitoInvalidFallback(result.bundleId, built).catch((err) =>
             log.debug("Jito-invalid RPC fallback error", { err: String(err) })
@@ -708,6 +729,15 @@ export class BundleDispatcher {
       rootCause: decision.diagnosis,
       confidence: decision.confidence,
     });
+
+    if (this.ctx.emit) {
+      this.ctx.emit("ai_decision", {
+        bundleId: result.bundleId,
+        attempt: ctx.attempt,
+        input: agentInput,
+        decision: decision
+      });
+    }
 
     const nextHistory = [
       ...ctx.history,
