@@ -8,23 +8,23 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link
-    href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap"
+    href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=Plus+Jakarta+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap"
     rel="stylesheet">
   <style>
     :root {
-      --bg-primary: #070b13;
-      --bg-secondary: #0d1220;
-      --card-bg: #12182c;
-      --border-color: rgba(255, 255, 255, 0.08);
-      --border-highlight: #3b82f6;
+      --bg-primary: #030712;
+      --bg-secondary: #0b0f19;
+      --card-bg: #0f172a;
+      --border-color: rgba(255, 255, 255, 0.06);
+      --border-highlight: #22d3ee;
       --text-primary: #f8fafc;
       --text-secondary: #94a3b8;
       --text-muted: #64748b;
-      --accent-blue: #3b82f6;
-      --accent-green: #10b981;
-      --accent-amber: #f59e0b;
-      --accent-red: #ef4444;
-      --sans: 'Inter', system-ui, sans-serif;
+      --accent-blue: #22d3ee;
+      --accent-green: #34d399;
+      --accent-amber: #fbbf24;
+      --accent-red: #f87171;
+      --sans: 'Plus Jakarta Sans', system-ui, sans-serif;
       --mono: 'JetBrains Mono', monospace;
     }
 
@@ -36,90 +36,153 @@
 
     body {
       background-color: var(--bg-primary);
+      background-image:
+        radial-gradient(circle at 50% 0%, rgba(34, 211, 238, 0.08) 0%, transparent 50%),
+        radial-gradient(circle at 0% 100%, rgba(192, 132, 252, 0.04) 0%, transparent 40%),
+        linear-gradient(rgba(255, 255, 255, 0.005) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255, 255, 255, 0.005) 1px, transparent 1px);
+      background-size: 100% 100%, 100% 100%, 40px 40px, 40px 40px;
       color: var(--text-primary);
       font-family: var(--sans);
       font-size: 14px;
-      line-height: 1.5;
+      line-height: 1.6;
       -webkit-font-smoothing: antialiased;
+      padding-top: 70px;
     }
 
     .container {
-      max-width: 1000px;
+      max-width: 1200px;
       margin: 0 auto;
-      padding: 0 32px;
+      padding: 0 40px;
     }
 
     /* --- HEADER BLOCK --- */
-    header {
-      padding: 64px 0 40px;
-      border-bottom: 1px solid var(--border-color);
+    .hero-section {
+      padding: 90px 0 60px;
+      text-align: center;
+      position: relative;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.05);
     }
 
-    .hero-eyebrow {
+    .hero-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background-color: rgba(34, 211, 238, 0.06);
+      border: 1px solid rgba(34, 211, 238, 0.15);
+      color: #22d3ee;
       font-family: var(--mono);
       font-size: 11px;
-      font-weight: 600;
-      color: var(--accent-blue);
-      letter-spacing: 0.2em;
+      padding: 6px 14px;
+      border-radius: 100px;
+      margin-bottom: 24px;
+      letter-spacing: 0.05em;
       text-transform: uppercase;
-      margin-bottom: 12px;
     }
 
-    h1 {
-      font-size: 40px;
-      font-weight: 800;
-      letter-spacing: -0.03em;
-      line-height: 1.1;
-      margin-bottom: 16px;
+    .hero-title {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 52px;
+      font-weight: 700;
+      line-height: 1.15;
+      letter-spacing: -0.02em;
+      max-width: 840px;
+      margin: 0 auto 20px;
+      color: #f8fafc;
+    }
+
+    .gradient-text {
+      background: linear-gradient(135deg, #22d3ee 0%, #c084fc 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
     }
 
     .hero-subtitle {
       font-size: 16px;
       color: var(--text-secondary);
-      max-width: 780px;
-      line-height: 1.6;
-      margin-bottom: 32px;
+      max-width: 760px;
+      margin: 0 auto 32px;
+      line-height: 1.7;
     }
 
-    .metadata-bar {
+    .hero-ctas {
       display: flex;
-      flex-wrap: wrap;
+      justify-content: center;
       gap: 16px;
       margin-bottom: 24px;
     }
 
+    .cta-btn {
+      font-family: var(--mono);
+      font-size: 12px;
+      font-weight: 700;
+      text-decoration: none;
+      padding: 12px 28px;
+      border-radius: 6px;
+      transition: all 0.2s ease;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+    }
+
+    .cta-btn.primary {
+      background-color: #22d3ee;
+      color: #030712;
+      box-shadow: 0 4px 20px rgba(34, 211, 238, 0.3);
+    }
+
+    .cta-btn.primary:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 24px rgba(34, 211, 238, 0.4);
+    }
+
+    .cta-btn.secondary {
+      background-color: rgba(255, 255, 255, 0.03);
+      color: #cbd5e1;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .cta-btn.secondary:hover {
+      background-color: rgba(255, 255, 255, 0.06);
+      border-color: rgba(255, 255, 255, 0.15);
+      transform: translateY(-2px);
+    }
+
+    .metadata-bar {
+      display: flex;
+      justify-content: center;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-top: 16px;
+    }
+
     .meta-tag {
       font-family: var(--mono);
-      font-size: 11px;
-      padding: 6px 12px;
+      font-size: 10.5px;
+      padding: 6px 14px;
       border-radius: 4px;
       background-color: var(--bg-secondary);
       border: 1px solid var(--border-color);
       color: var(--text-secondary);
     }
 
-    /* --- TOC BAR --- */
+    /* --- FIXED STICKY NAVIGATION --- */
     .toc-bar {
-      position: sticky;
+      position: fixed;
       top: 0;
-      background-color: rgba(7, 11, 19, 0.85);
-      backdrop-filter: blur(12px);
-      border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
-      z-index: 1000;
-      padding: 12px 0;
+      left: 0;
+      width: 100%;
+      background-color: rgba(3, 7, 18, 0.75);
+      backdrop-filter: blur(16px);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+      z-index: 2000;
+      padding: 14px 0;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
     }
 
     .toc-links {
       display: flex;
-      gap: 20px;
+      gap: 24px;
       list-style: none;
-      overflow-x: auto;
-      scrollbar-width: none;
-    }
-
-    .toc-links::-webkit-scrollbar {
-      display: none;
     }
 
     .toc-links a {
@@ -129,12 +192,12 @@
       font-weight: 600;
       font-family: var(--mono);
       text-transform: uppercase;
-      letter-spacing: 0.05em;
-      transition: color 0.1s ease;
+      letter-spacing: 0.1em;
+      transition: color 0.2s ease;
     }
 
     .toc-links a:hover {
-      color: var(--text-primary);
+      color: var(--accent-blue);
     }
 
     /* --- SECTIONS --- */
@@ -775,72 +838,593 @@
     .recovery-callout strong {
       color: var(--accent-amber);
     }
+
+    /* --- NEW INTERACTIVE STYLES --- */
+    .brand-logo-container {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .pulse-dot {
+      width: 8px;
+      height: 8px;
+      background-color: var(--accent-green);
+      border-radius: 50%;
+      box-shadow: 0 0 10px var(--accent-green);
+      animation: pulse 2s infinite;
+      display: inline-block;
+      margin-left: 6px;
+      vertical-align: middle;
+    }
+
+    @keyframes pulse {
+      0% {
+        transform: scale(0.95);
+        box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7);
+      }
+
+      70% {
+        transform: scale(1);
+        box-shadow: 0 0 0 6px rgba(16, 185, 129, 0);
+      }
+
+      100% {
+        transform: scale(0.95);
+        box-shadow: 0 0 0 0 rgba(16, 185, 129, 0);
+      }
+    }
+
+    /* Nav bar overhaul */
+    .toc-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .toc-bar .container {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      width: 100%;
+    }
+
+    .nav-btn {
+      font-family: var(--mono);
+      font-size: 11px;
+      font-weight: 700;
+      color: #070b13 !important;
+      background-color: var(--accent-blue);
+      padding: 8px 16px;
+      border-radius: 4px;
+      text-decoration: none !important;
+      transition: opacity 0.2s ease;
+      margin-left: 20px;
+    }
+
+    .nav-btn:hover {
+      opacity: 0.9;
+    }
+
+    /* Interactive Calculator */
+    .calc-container {
+      background-color: var(--bg-secondary);
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      padding: 24px;
+      margin: 24px 0;
+    }
+
+    .calc-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 32px;
+    }
+
+    @media (max-width: 768px) {
+      .calc-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .calc-control {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .slider-group {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .slider-header {
+      display: flex;
+      justify-content: space-between;
+      font-size: 12.5px;
+      font-family: var(--mono);
+      color: var(--text-secondary);
+    }
+
+    .slider-val {
+      color: var(--text-primary);
+      font-weight: bold;
+    }
+
+    .calc-slider {
+      width: 100%;
+      height: 6px;
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 3px;
+      outline: none;
+      -webkit-appearance: none;
+    }
+
+    .calc-slider::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      background: var(--accent-blue);
+      cursor: pointer;
+      box-shadow: 0 0 10px var(--accent-blue);
+    }
+
+    .calc-result {
+      background-color: #070b13;
+      border: 1px solid rgba(255, 255, 255, 0.04);
+      border-radius: 6px;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+
+    .calc-score-title {
+      font-family: var(--mono);
+      font-size: 11px;
+      color: var(--text-muted);
+      text-transform: uppercase;
+    }
+
+    .calc-score-val {
+      font-family: var(--mono);
+      font-size: 32px;
+      font-weight: bold;
+      color: var(--accent-blue);
+      margin: 8px 0;
+    }
+
+    .calc-badge {
+      font-size: 11px;
+      padding: 4px 8px;
+      border-radius: 4px;
+      font-weight: bold;
+      align-self: flex-start;
+      margin-top: 10px;
+      text-transform: uppercase;
+    }
+
+    .calc-badge.win {
+      background-color: rgba(16, 185, 129, 0.1);
+      color: #34d399;
+      border: 1px solid rgba(16, 185, 129, 0.2);
+    }
+
+    .calc-badge.loss {
+      background-color: rgba(239, 68, 68, 0.1);
+      color: #f87171;
+      border: 1px solid rgba(239, 68, 68, 0.2);
+    }
+
+    /* Stepper Widget */
+    .stepper-nav {
+      display: flex;
+      border-bottom: 1px solid var(--border-color);
+      margin-bottom: 20px;
+      overflow-x: auto;
+      scrollbar-width: none;
+    }
+
+    .step-btn {
+      background: none;
+      border: none;
+      font-family: var(--mono);
+      font-size: 11px;
+      color: var(--text-secondary);
+      padding: 12px 20px;
+      cursor: pointer;
+      border-bottom: 2px solid transparent;
+      white-space: nowrap;
+      transition: color 0.2s, border-color 0.2s;
+    }
+
+    .step-btn.active {
+      color: var(--accent-blue);
+      border-bottom-color: var(--accent-blue);
+      font-weight: bold;
+    }
+
+    .step-content {
+      display: none;
+      background-color: var(--bg-secondary);
+      border: 1px solid var(--border-color);
+      border-radius: 6px;
+      padding: 24px;
+    }
+
+    .step-content.active {
+      display: block;
+    }
+
+    .step-info-grid {
+      display: grid;
+      grid-template-columns: 1fr 1.2fr;
+      gap: 24px;
+    }
+
+    @media (max-width: 768px) {
+      .step-info-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .step-desc-panel h3 {
+      font-size: 16px;
+      color: var(--text-primary);
+      margin-bottom: 10px;
+    }
+
+    .step-desc-panel p {
+      font-size: 13px;
+      color: var(--text-secondary);
+      line-height: 1.6;
+    }
+
+    .step-code-panel {
+      background-color: #050811;
+      border: 1px solid rgba(255, 255, 255, 0.03);
+      border-radius: 4px;
+      padding: 16px;
+      overflow-x: auto;
+    }
+
+    .step-code-panel pre {
+      margin: 0;
+      font-family: var(--mono);
+      font-size: 11px;
+      color: #93c5fd;
+    }
+
+    /* Filter Logs Buttons */
+    .filter-bar {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 20px;
+      overflow-x: auto;
+      scrollbar-width: none;
+    }
+
+    .filter-btn {
+      background-color: var(--bg-secondary);
+      border: 1px solid var(--border-color);
+      color: var(--text-secondary);
+      padding: 6px 14px;
+      font-size: 11.5px;
+      font-family: var(--sans);
+      font-weight: 500;
+      border-radius: 4px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .filter-btn.active {
+      background-color: var(--accent-blue);
+      border-color: var(--accent-blue);
+      color: #070b13;
+      font-weight: 600;
+    }
+
+    /* Accordion FAQ */
+    .faq-accordion {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      margin-top: 24px;
+    }
+
+    .faq-item {
+      background-color: var(--bg-secondary);
+      border: 1px solid var(--border-color);
+      border-radius: 6px;
+      overflow: hidden;
+    }
+
+    .faq-header {
+      padding: 18px 24px;
+      cursor: pointer;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      transition: background-color 0.2s;
+    }
+
+    .faq-header:hover {
+      background-color: rgba(255, 255, 255, 0.02);
+    }
+
+    .faq-header h3 {
+      font-size: 14px;
+      color: var(--text-primary);
+      margin: 0;
+    }
+
+    .faq-icon {
+      font-size: 12px;
+      color: var(--text-secondary);
+      transition: transform 0.2s;
+    }
+
+    .faq-item.active .faq-icon {
+      transform: rotate(180deg);
+    }
+
+    .faq-content {
+      max-height: 0;
+      overflow: hidden;
+      transition: max-height 0.2s ease-out;
+      padding: 0 24px;
+    }
+
+    .faq-item.active .faq-content {
+      padding: 0 24px 20px;
+    }
+
+    /* --- GITHUB DROPDOWN STYLE --- */
+    .nav-dropdown {
+      position: relative;
+      display: inline-block;
+      margin-left: 20px;
+      border-left: 1px solid rgba(255, 255, 255, 0.15);
+      padding-left: 20px;
+    }
+
+    .nav-dropdown-trigger {
+      font-family: var(--mono);
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--accent-blue);
+      background: none;
+      border: 1px solid rgba(34, 211, 238, 0.2);
+      padding: 6px 14px;
+      border-radius: 4px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      text-transform: uppercase;
+      transition: all 0.2s;
+    }
+
+    .nav-dropdown-trigger:hover {
+      background-color: rgba(34, 211, 238, 0.05);
+      border-color: var(--accent-blue);
+    }
+
+    .nav-dropdown-menu {
+      position: absolute;
+      top: calc(100% + 10px);
+      right: 0;
+      width: 260px;
+      background-color: rgba(11, 15, 25, 0.95);
+      backdrop-filter: blur(16px);
+      border: 1px solid var(--border-color);
+      border-radius: 6px;
+      padding: 12px;
+      box-shadow: 0 10px 40px rgba(0, 0, 0, 0.6);
+      display: none;
+      flex-direction: column;
+      gap: 8px;
+      opacity: 0;
+      transform: translateY(-10px);
+      transition: opacity 0.2s, transform 0.2s;
+      z-index: 3000;
+    }
+
+    .nav-dropdown-menu.show {
+      display: flex;
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    .dropdown-item {
+      display: flex;
+      flex-direction: column;
+      padding: 8px 12px;
+      border-radius: 4px;
+      text-decoration: none;
+      transition: background-color 0.2s;
+      text-align: left;
+    }
+
+    .dropdown-item:hover {
+      background-color: rgba(255, 255, 255, 0.04);
+    }
+
+    .dropdown-item-title {
+      font-family: var(--mono);
+      font-size: 11px;
+      font-weight: bold;
+      color: var(--accent-blue);
+      margin-bottom: 2px;
+    }
+
+    .dropdown-item-desc {
+      font-size: 10px;
+      color: var(--text-secondary);
+      line-height: 1.4;
+    }
   </style>
 </head>
 
 <body>
 
-  <header>
+  <!-- STICKY HEADER NAVIGATION BAR -->
+  <div class="toc-bar">
     <div class="container">
-      <div class="hero-eyebrow">Technical Specification & System Design</div>
-      <h1>AutoLand: Intelligent Solana Transaction Stack</h1>
+      <div class="brand-logo-container">
+        <span
+          style="font-family: var(--mono); font-size: 13px; font-weight: bold; color: var(--text-primary); letter-spacing: 0.1em; text-transform: uppercase;">AutoLand</span>
+        <span class="pulse-dot"></span>
+        <span
+          style="font-family: var(--mono); font-size: 9px; color: var(--accent-green); letter-spacing: 0.05em; text-transform: uppercase; margin-left: 2px;">Live</span>
+      </div>
+      <ul class="toc-links" style="margin-left: auto; display: flex; align-items: center;">
+        <li><a href="#problem">1. The Problem</a></li>
+        <li><a href="#jito-auction">2. Bidding density</a></li>
+        <li><a href="#approach">3. Our Solution</a></li>
+        <li><a href="#pipelines">4. Core Pipelines</a></li>
+        <li><a href="#submissions">5. Live Console</a></li>
+        <li><a href="#insights">6. FAQ &amp; Q&amp;A</a></li>
+      </ul>
+      <div class="nav-dropdown">
+        <button class="nav-dropdown-trigger" onclick="toggleDropdown(event)">
+          GITHUB ▾
+        </button>
+        <div class="nav-dropdown-menu" id="github-menu">
+          <a href="https://github.com/Timadigwe/Autoland" target="_blank" class="dropdown-item">
+            <span class="dropdown-item-title">AutoLand Repository</span>
+            <span class="dropdown-item-desc">Browse core package source, reference bot, and installation scripts.</span>
+          </a>
+          <a href="https://github.com/Timadigwe/Autoland/blob/main/README.md" target="_blank" class="dropdown-item">
+            <span class="dropdown-item-title">Documentation</span>
+            <span class="dropdown-item-desc">Read quickstart and SDK usage documentation.</span>
+          </a>
+          <a href="https://github.com/Timadigwe/Autoland/blob/main/ARCHITECTURE.md" target="_blank"
+            class="dropdown-item">
+            <span class="dropdown-item-title">Architecture Specs</span>
+            <span class="dropdown-item-desc">In-depth mathematical spec of Jito conflict auctions and Yellowstone
+              pipelines.</span>
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- HERO PITCH & PRESENTATION SECTION -->
+  <header class="hero-section">
+    <div class="container">
+      <div class="hero-badge">
+        <span class="pulse-dot"></span> Tested live in production on WORLDCUP/SOL pool
+      </div>
+      <h1 class="hero-title">
+        Landing Solana Transactions <span class="gradient-text">Under Extreme Contention</span>
+      </h1>
       <p class="hero-subtitle">
-        A developer-focused transaction execution stack SDK for Solana. It is built to ensure hyper-reliable,
-        cost-effective transaction landing on highly contested block space, utilizing Jito bundles, Yellowstone gRPC
-        streams, and autonomous AI-driven recovery.
+        A developer-first transaction execution SDK for Solana. Decode target account contention
+        with sub-100ms Yellowstone gRPC telemetry, Optimize Compute Units and leverage, self-healing AI diagnostics to
+        win block space and land transactions.
       </p>
+      <div class="hero-ctas">
+        <a href="#problem" class="cta-btn primary">Explore Specifications</a>
+        <a href="#submissions" class="cta-btn secondary">Live Logs Console</a>
+      </div>
       <div class="metadata-bar">
         <span class="meta-tag">@autoland/dlmm-bot</span>
         <span class="meta-tag">Core: @autoland/core</span>
         <span class="meta-tag">Specs: v1.2.0</span>
-        <span class="meta-tag">Ecosystem: Jito Bundles / Yellowstone gRPC</span>
+        <span class="meta-tag">Ecosystem: Jito Bundles / Yellowstone gRPC / SolInfra</span>
       </div>
     </div>
   </header>
-  <div class="container">
-    <p class="hero-subtitle">This architecture was tested live on the contested <strong>WORLDCUP/SOL</strong> pool.</p>
-  </div>
-
-  <div class="toc-bar">
-    <div class="container">
-      <ul class="toc-links">
-        <li><a href="#problem">1. The Problem</a></li>
-        <li><a href="#jito-auction">2. Jito Auction Model</a></li>
-        <li><a href="#approach">3. Our Solution</a></li>
-        <li><a href="#pipelines">4. Core Pipelines</a></li>
-        <li><a href="#submissions">5. Operational Submissions</a></li>
-        <li><a href="#insights">6. Operational Q&amp;A</a></li>
-      </ul>
-    </div>
-  </div>
 
   <div class="container">
 
     <!-- SYSTEM SCOPE INTRO -->
     <div class="diag-box" style="margin-top: 32px; border-color: rgba(59, 130, 246, 0.2);">
       <div class="diag-box-title">System Scope: Reference Implementation &amp; SDK Architecture</div>
-      <p style="font-size: 13px; color: var(--text-secondary); margin-bottom: 16px; line-height: 1.6;">
-        AutoLand is built as a reusable, developer-focused SDK (<code>@autoland/core</code>) imported by client applications to execute reliable block-space bidding. The relationship between the application layer and core stack is shown below:
+      <p style="font-size: 13px; color: var(--text-secondary); margin-bottom: 20px; line-height: 1.6;">
+        AutoLand is built as a reusable, developer-focused SDK (<code>@autoland/core</code>) imported by client
+        applications to execute reliable block-space bidding. The relationship between the application layer and core
+        stack is shown below:
       </p>
-      <svg class="svg-diag" viewBox="0 0 800 160" fill="none" xmlns="http://www.w3.org/2000/svg">
+
+      <!-- Split-screen story code/log dashboard -->
+      <div class="grid-2" style="margin-bottom: 24px;">
+        <!-- Left Panel: Your Bot application code -->
+        <div class="step-code-panel"
+          style="background-color: #080c16; border: 1px solid rgba(255,255,255,0.04); border-radius: 6px;">
+          <div
+            style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255,255,255,0.04); padding-bottom: 8px; margin-bottom: 12px;">
+            <span
+              style="font-family: var(--mono); font-size: 10.5px; color: var(--accent-blue); font-weight: bold;">[CLIENT]
+              dlmm-bot / Your Application</span>
+            <span style="font-size: 9px; color: var(--text-muted); font-family: var(--mono);">typescript</span>
+          </div>
+          <pre style="margin: 0; font-family: var(--mono); font-size: 11px; color: #a5b4fc; line-height: 1.6;"><code>// 1. Bot checks pool state
+const pool = await getDLMMPool(POOL_ADDR);
+
+if (pool.priceChange > threshold) {
+  // 2. Builds rebalance transactions
+  const txs = await buildRebalanceTxs(pool);
+
+  // 3. Passes batch to AutoLand SDK
+  const result = await autoland.submitBatch(txs, {
+    targetPool: POOL_ADDR,
+    outbidMultiplier: 1.15
+  });
+}</code></pre>
+        </div>
+
+        <!-- Right Panel: AutoLand SDK execution terminal logs -->
+        <div class="step-code-panel"
+          style="background-color: #04060b; border: 1px solid rgba(255,255,255,0.04); border-radius: 6px;">
+          <div
+            style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255,255,255,0.04); padding-bottom: 8px; margin-bottom: 12px;">
+            <span
+              style="font-family: var(--mono); font-size: 10.5px; color: var(--accent-green); font-weight: bold;">[SDK]
+              AutoLand Execution Pipeline</span>
+            <span style="font-size: 9px; color: var(--text-muted); font-family: var(--mono);">real-time telemetry
+              logs</span>
+          </div>
+          <pre
+            style="margin: 0; font-family: var(--mono); font-size: 10.5px; color: var(--text-secondary); line-height: 1.5; white-space: pre-wrap;"><code><span style="color: #60a5fa;">[Yellowstone gRPC]</span> Streaming pool: <span style="color: #94a3b8;">WORLDCUP/SOL</span>
+<span style="color: #60a5fa;">[Yellowstone gRPC]</span> Active competitor outbid floor: <span style="color: #fbbf24;">84.5 lamports/CU</span>
+<span style="color: #38bdf8;">[CU Optimizer]</span> Simulating batch pre-flight... consumed: <span style="color: #f8fafc;">41,200 CUs</span>
+<span style="color: #38bdf8;">[CU Optimizer]</span> Setting envelope to <span style="color: #34d399;">45,320 CUs</span> (+10% safety margin)
+<span style="color: #c084fc;">[Contention Bidding]</span> Calculated Jito tip: <span style="color: #f8fafc;">3,829,540 lamports (0.0038 SOL)</span>
+<span style="color: #34d399;">[Private Dispatch]</span> Dispatching bundle payload to regional block engines
+<span style="color: #34d399;">[Jito Stream]</span> Landed in slot 429341336 (Attempt 1, 100% confirmation)</code></pre>
+        </div>
+      </div>
+
+      <!-- Arrow representation -->
+      <svg class="svg-diag" viewBox="0 0 800 120" fill="none" xmlns="http://www.w3.org/2000/svg">
         <!-- Bot Application Box -->
-        <rect x="40" y="40" width="280" height="80" rx="6" fill="#0d1220" stroke="#1d253f" />
-        <text x="60" y="65" fill="#f8fafc" font-family="sans-serif" font-size="11" font-weight="bold">Your Bot / Application (e.g. dlmm-bot)</text>
-        <text x="60" y="85" fill="#94a3b8" font-family="sans-serif" font-size="10">• Builds transactions (deposits, swaps, rebalances)</text>
-        <text x="60" y="105" fill="#94a3b8" font-family="sans-serif" font-size="10">• Registers target pools for fee tracking</text>
+        <rect x="40" y="20" width="280" height="80" rx="6" fill="#0d1220" stroke="#1d253f" />
+        <text x="60" y="45" fill="#f8fafc" font-family="sans-serif" font-size="11" font-weight="bold">Your Bot /
+          Application (e.g. dlmm-bot)</text>
+        <text x="60" y="65" fill="#94a3b8" font-family="sans-serif" font-size="10">• Builds transactions (deposits,
+          swaps, rebalances)</text>
+        <text x="60" y="85" fill="#94a3b8" font-family="sans-serif" font-size="10">• Registers target pools for fee
+          tracking</text>
 
         <!-- Arrow with labels -->
-        <path d="M320 80 H480" stroke="#3b82f6" stroke-width="2" />
-        <polygon points="480,76 480,84 487,80" fill="#3b82f6" />
-        <text x="335" y="65" fill="#3b82f6" font-family="monospace" font-size="9">1. Submit Tx Batches</text>
-        <text x="335" y="98" fill="#3b82f6" font-family="monospace" font-size="9">2. Track Pool Activity</text>
+        <path d="M320 60 H480" stroke="#3b82f6" stroke-width="2" />
+        <polygon points="480,56 480,64 487,60" fill="#3b82f6" />
+        <text x="335" y="45" fill="#3b82f6" font-family="monospace" font-size="9">1. Submit Tx Batches</text>
+        <text x="335" y="78" fill="#3b82f6" font-family="monospace" font-size="9">2. Track Pool Activity</text>
 
         <!-- SDK Box -->
-        <rect x="480" y="30" width="280" height="100" rx="6" fill="#12182c" stroke="#3b82f6" stroke-width="1.5" />
-        <text x="500" y="55" fill="#3b82f6" font-family="monospace" font-size="11" font-weight="bold">AutoLand SDK (@autoland/core)</text>
-        <text x="500" y="78" fill="#cbd5e1" font-family="sans-serif" font-size="9.5">• Sub-100ms Yellowstone gRPC profiling</text>
-        <text x="500" y="96" fill="#cbd5e1" font-family="sans-serif" font-size="9.5">• Pre-flight CU Resizing &amp; outbidding</text>
-        <text x="500" y="114" fill="#cbd5e1" font-family="sans-serif" font-size="9.5">• Programmatic AI recovery loops</text>
+        <rect x="480" y="10" width="280" height="100" rx="6" fill="#12182c" stroke="#3b82f6" stroke-width="1.5" />
+        <text x="500" y="35" fill="#3b82f6" font-family="monospace" font-size="11" font-weight="bold">AutoLand SDK
+          (@autoland/core)</text>
+        <text x="500" y="58" fill="#cbd5e1" font-family="sans-serif" font-size="9.5">• Sub-100ms Yellowstone gRPC
+          profiling</text>
+        <text x="500" y="76" fill="#cbd5e1" font-family="sans-serif" font-size="9.5">• Pre-flight CU Resizing &amp;
+          outbidding</text>
+        <text x="500" y="94" fill="#cbd5e1" font-family="sans-serif" font-size="9.5">• AI recovery loops</text>
       </svg>
     </div>
 
@@ -986,6 +1570,49 @@
         <strong style="color: var(--text-primary)">14x higher absolute tip</strong>. AutoLand's CU resizing directly
         optimizes this denominator to win auctions cost-efficiently.
       </p>
+
+      <!-- INTERACTIVE PRIORITY SCORE CALCULATOR -->
+      <div class="calc-container">
+        <h3 style="font-size: 15px; font-family: var(--mono); color: var(--accent-blue); margin-bottom: 16px;">
+          Interactive Bidding &amp; Density Simulator</h3>
+        <p style="font-size: 13px; color: var(--text-secondary); margin-bottom: 20px; line-height: 1.6;">
+          Drag the sliders to simulate the impact of optimizing Compute Units (CUs) and tipping on your priority score.
+          Compare your score with a standard bot (bidding 70M lamports on 1.4M CUs, resulting in a density of 50
+          lamports/CU).
+        </p>
+        <div class="calc-grid">
+          <div class="calc-control">
+            <div class="slider-group">
+              <div class="slider-header">
+                <span>Jito Tip (SOL)</span>
+                <span class="slider-val" id="tip-val">0.005 SOL</span>
+              </div>
+              <input type="range" class="calc-slider" id="tip-slider" min="0.001" max="0.1" step="0.001" value="0.005">
+            </div>
+
+            <div class="slider-group">
+              <div class="slider-header">
+                <span>Compute Units Requested (CU)</span>
+                <span class="slider-val" id="cu-val">50,000 CUs</span>
+              </div>
+              <input type="range" class="calc-slider" id="cu-slider" min="10000" max="1400000" step="5000"
+                value="50000">
+            </div>
+          </div>
+
+          <div class="calc-result">
+            <div>
+              <div class="calc-score-title">Your Priority Score</div>
+              <div class="calc-score-val" id="score-val">100.00 <span
+                  style="font-size:12px; font-weight:normal; color:var(--text-muted);">lamports/CU</span></div>
+              <div style="font-size:12.5px; color:var(--text-secondary); margin-top: 6px;">
+                Standard Bot Density: <strong style="color:var(--text-primary);">50.00 lamports/CU</strong>
+              </div>
+            </div>
+            <div class="calc-badge" id="calc-badge">STATUS: WINS AUCTION (100% landing probability)</div>
+          </div>
+        </div>
+      </div>
     </section>
 
     <!-- SECTION 3: OUR SOLUTION -->
@@ -1038,7 +1665,8 @@
         <svg class="svg-diag" viewBox="0 0 800 240" fill="none" xmlns="http://www.w3.org/2000/svg">
           <!-- Yellowstone gRPC Stream input -->
           <rect x="310" y="15" width="180" height="40" rx="4" fill="#0d1220" stroke="#3b82f6" />
-          <text x="325" y="38" fill="#f8fafc" font-family="monospace" font-size="9" font-weight="bold">Yellowstone gRPC Stream</text>
+          <text x="325" y="38" fill="#f8fafc" font-family="monospace" font-size="9" font-weight="bold">Yellowstone gRPC
+            Stream</text>
 
           <!-- Arrow down to CompetitorTipTracker -->
           <path d="M400 55 V90" stroke="#3b82f6" stroke-width="1.5" />
@@ -1046,26 +1674,32 @@
 
           <!-- Decision block: Is Contested? -->
           <rect x="320" y="95" width="160" height="40" rx="4" fill="#12182c" stroke="#fbbf24" stroke-width="1.5" />
-          <text x="355" y="118" fill="#fbbf24" font-family="sans-serif" font-size="10.5" font-weight="bold">Is Contested?</text>
+          <text x="355" y="118" fill="#fbbf24" font-family="sans-serif" font-size="10.5" font-weight="bold">Is
+            Contested?</text>
 
           <!-- YES branch (Left) -->
           <path d="M320 115 H150 V150" stroke="#10b981" stroke-width="1.5" />
           <polygon points="147,150 153,150 150,155" fill="#10b981" />
-          <text x="210" y="110" fill="#10b981" font-family="sans-serif" font-size="9.5" font-weight="bold">YES (Competitor active)</text>
+          <text x="210" y="110" fill="#10b981" font-family="sans-serif" font-size="9.5" font-weight="bold">YES
+            (Competitor active)</text>
 
           <!-- NO branch (Right) -->
           <path d="M480 115 H650 V150" stroke="#64748b" stroke-width="1.5" />
           <polygon points="647,150 653,150 650,155" fill="#64748b" />
-          <text x="510" y="110" fill="#94a3b8" font-family="sans-serif" font-size="9.5" font-weight="bold">NO (Quiet pool)</text>
+          <text x="510" y="110" fill="#94a3b8" font-family="sans-serif" font-size="9.5" font-weight="bold">NO (Quiet
+            pool)</text>
 
           <!-- YES box -->
           <rect x="50" y="155" width="200" height="60" rx="4" fill="#070b13" stroke="#10b981" />
-          <text x="65" y="178" fill="#34d399" font-family="monospace" font-size="10" font-weight="bold">Outbid Pool Competitors</text>
-          <text x="65" y="195" fill="#94a3b8" font-family="sans-serif" font-size="9">Target Tip = Max Competitor Tip/CU</text>
+          <text x="65" y="178" fill="#34d399" font-family="monospace" font-size="10" font-weight="bold">Outbid Pool
+            Competitors</text>
+          <text x="65" y="195" fill="#94a3b8" font-family="sans-serif" font-size="9">Target Tip = Max Competitor
+            Tip/CU</text>
 
           <!-- NO box -->
           <rect x="550" y="155" width="200" height="60" rx="4" fill="#070b13" stroke="#1d253f" />
-          <text x="565" y="178" fill="#cbd5e1" font-family="monospace" font-size="10" font-weight="bold">Global Jito Percentiles</text>
+          <text x="565" y="178" fill="#cbd5e1" font-family="monospace" font-size="10" font-weight="bold">Global Jito
+            Percentiles</text>
           <text x="565" y="195" fill="#94a3b8" font-family="sans-serif" font-size="9">Default to p50/p90 baseline</text>
         </svg>
       </div>
@@ -1194,119 +1828,185 @@
         </svg>
       </div>
 
-      <div class="diag-box">
-        <div class="diag-box-title">Compute Unit Resizing Optimization Pipeline</div>
-        <div class="pipeline-timeline">
-          <div class="pipe-step">
-            <div class="pipe-step-num">1</div>
-            <div class="pipe-step-label">Compile</div>
-            <div class="pipe-step-desc">Construct tx payloads</div>
-          </div>
-          <div class="pipe-connector"></div>
-          <div class="pipe-step">
-            <div class="pipe-step-num">2</div>
-            <div class="pipe-step-label">Simulate</div>
-            <div class="pipe-step-desc">Local RPC pre-flight</div>
-          </div>
-          <div class="pipe-connector"></div>
-          <div class="pipe-step">
-            <div class="pipe-step-num">3</div>
-            <div class="pipe-step-label">Parse</div>
-            <div class="pipe-step-desc">Extract CUs consumed</div>
-          </div>
-          <div class="pipe-connector"></div>
-          <div class="pipe-step">
-            <div class="pipe-step-num">4</div>
-            <div class="pipe-step-label">Resize</div>
-            <div class="pipe-step-desc">Set limit + 10% buffer</div>
-          </div>
-          <div class="pipe-connector"></div>
-          <div class="pipe-step">
-            <div class="pipe-step-num">5</div>
-            <div class="pipe-step-label">Dispatch</div>
-            <div class="pipe-step-desc">Sign & Jito submit</div>
+      <!-- INTERACTIVE PIPELINE STEPPER -->
+      <div class="calc-container" style="border-color: rgba(167, 139, 250, 0.2); margin-top: 32px;">
+        <h3 style="font-size: 15px; font-family: var(--mono); color: var(--accent-blue); margin-bottom: 16px;">
+          Interactive SDK Core Pipeline Tour</h3>
+
+        <div class="stepper-nav">
+          <button class="step-btn active" onclick="switchStep(0)">1. Compute Unit Tuning</button>
+          <button class="step-btn" onclick="switchStep(1)">2. Dynamic Jito Bidding</button>
+          <button class="step-btn" onclick="switchStep(2)">3. AI Advisor Recovery</button>
+          <button class="step-btn" onclick="switchStep(3)">4. Asynchronous Events</button>
+        </div>
+
+        <!-- Step 0: CU Tuning -->
+        <div class="step-content active" id="step-0">
+          <div class="step-info-grid">
+            <div class="step-desc-panel">
+              <h3>Compute Unit Resizing Optimization</h3>
+              <p style="margin-bottom: 16px;">
+                Before every broadcast, AutoLand runs a simulated pre-flight transaction execution against
+                public/private RPC nodes to measure the precise Compute Units consumed by your instruction. It
+                intercepts the standard unoptimized envelopes (default 1.4M CUs) and resizes it to match actual usage
+                (+10% safety buffer).
+              </p>
+
+              <div class="pipeline-timeline" style="margin: 12px 0;">
+                <div class="pipe-step">
+                  <div class="pipe-step-num">1</div>
+                  <div class="pipe-step-label">Compile</div>
+                </div>
+                <div class="pipe-connector"></div>
+                <div class="pipe-step">
+                  <div class="pipe-step-num">2</div>
+                  <div class="pipe-step-label">Simulate</div>
+                </div>
+                <div class="pipe-connector"></div>
+                <div class="pipe-step">
+                  <div class="pipe-step-num">3</div>
+                  <div class="pipe-step-label">Resize</div>
+                </div>
+              </div>
+            </div>
+            <div class="step-code-panel">
+              <div style="font-size: 10px; color: var(--text-muted); font-family: var(--mono); margin-bottom: 8px;">
+                typescript — sdk/cu-resizer.ts</div>
+              <pre><code>// AutoLand dynamically resizing requested CUs
+const tx = new Transaction().add(
+  ComputeBudgetProgram.setComputeUnitLimit({ units: 1_400_000 }), // default
+  swapInstruction
+);
+
+// Under the hood, AutoLand simulates the bundle and adjusts:
+const optimizedTx = await autoland.optimizeComputeUnits(tx);
+// Result: units adjusted to 48,500 CUs (96% reduction!)</code></pre>
+            </div>
           </div>
         </div>
-      </div>
 
-      <div class="diag-box">
-        <div class="diag-box-title">AI Heuristics & Diagnostics Loop</div>
-        <svg class="svg-diag" viewBox="0 0 800 200" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <!-- State: Drop Detected -->
-          <rect x="20" y="70" width="130" height="60" rx="4" fill="#0d1220" stroke="#ef4444" />
-          <text x="35" y="95" fill="#f8fafc" font-family="sans-serif" font-size="11"
-            font-weight="bold">Drop/Timeout</text>
-          <text x="35" y="112" fill="#ef4444" font-family="monospace" font-size="9">Jito Result Stream</text>
+        <!-- Step 1: Jito Bidding -->
+        <div class="step-content" id="step-1">
+          <div class="step-info-grid">
+            <div class="step-desc-panel">
+              <h3>Private Jito Bidding &amp; Outbidding</h3>
+              <p>
+                AutoLand bypasses public mempools entirely by bundling transactions and sending them through regional
+                Jito block engines directly to validators. By checking localized contention on targets (via Yellowstone
+                gRPC), it dynamically prices tips to outbid pool competitors by a configured multiplier (e.g. 10%).
+              </p>
+            </div>
+            <div class="step-code-panel">
+              <div style="font-size: 10px; color: var(--text-muted); font-family: var(--mono); margin-bottom: 8px;">
+                typescript — sdk/jito-dispatch.ts</div>
+              <pre><code>// Bids are scaled dynamically using Yellowstone telemetry updates
+const bidOptions = {
+  targetAccount: "WORLDCUP_SOL_POOL",
+  maxTipLamports: 100_000_000, // 0.1 SOL protection cap
+  multiplier: 1.15 // Outbid active competitor tips by 15%
+};
 
-          <!-- Arrow -->
-          <path d="M160 100 H230" stroke="#3b82f6" stroke-width="1.5" />
-          <polygon points="230,96 230,104 237,100" fill="#3b82f6" />
+const result = await autoland.submitDynamicJitoBundle(
+  [optimizedTx],
+  bidOptions
+);</code></pre>
+            </div>
+          </div>
+        </div>
 
-          <!-- AI Advisor Analyzer -->
-          <rect x="250" y="45" width="180" height="110" rx="6" fill="#12182c" stroke="#3b82f6" stroke-width="1.5" />
-          <text x="265" y="65" fill="#3b82f6" font-family="sans-serif" font-size="11" font-weight="bold">AI Advisor
-            Diagnostics</text>
-          <text x="265" y="85" fill="#64748b" font-family="monospace" font-size="9">Tools: get_recent_lifecycles</text>
-          <text x="265" y="100" fill="#64748b" font-family="monospace" font-size="9">Tools:
-            get_tip_percentile_info</text>
-          <text x="265" y="122" fill="#a78bfa" font-family="monospace" font-size="9" font-weight="bold">Output Action
-            Params:</text>
-          <text x="265" y="137" fill="#10b981" font-family="monospace" font-size="9">refresh_blockhash: true</text>
+        <!-- Step 2: AI Recovery -->
+        <div class="step-content" id="step-2">
+          <div class="step-info-grid">
+            <div class="step-desc-panel">
+              <h3>AI Diagnostics &amp; Recovery Loop</h3>
+              <p style="margin-bottom: 16px;">
+                If a bundle fails to land (expired blockhash, Low Fee, skipped leader), the AutoLand SDK invokes the AI
+                Advisor module. It queries recent block metrics, diagnoses the exact failure vector, and returns
+                re-signing parameters (scaled tips, updated slippage, or RPC fallbacks) within strict safety boundaries.
+              </p>
 
-          <!-- Arrow -->
-          <path d="M440 100 H510" stroke="#3b82f6" stroke-width="1.5" />
-          <polygon points="510,96 510,104 517,100" fill="#3b82f6" />
+              <svg width="100%" height="80" viewBox="0 0 400 80" fill="none" xmlns="http://www.w3.org/2000/svg"
+                style="border: 1px solid rgba(255,255,255,0.03); border-radius: 4px; padding: 6px; background-color: #070b13;">
+                <rect x="10" y="25" width="80" height="30" rx="3" fill="#12182c" stroke="#ef4444" />
+                <text x="20" y="44" fill="#ef4444" font-family="sans-serif" font-size="9">Drop Event</text>
+                <path d="M90 40 H130" stroke="#3b82f6" stroke-width="1.5" />
+                <rect x="130" y="15" width="130" height="50" rx="3" fill="#12182c" stroke="#3b82f6" />
+                <text x="140" y="34" fill="#3b82f6" font-family="sans-serif" font-size="9" font-weight="bold">AI LLM
+                  Advisor</text>
+                <text x="140" y="50" fill="#94a3b8" font-family="monospace" font-size="8">Escalate tip / Refresh
+                  blockhash</text>
+                <path d="M260 40 H300" stroke="#10b981" stroke-width="1.5" />
+                <rect x="300" y="25" width="80" height="30" rx="3" fill="#064e3b" stroke="#10b981" />
+                <text x="315" y="44" fill="#34d399" font-family="sans-serif" font-size="9">Re-submit</text>
+              </svg>
+            </div>
+            <div class="step-code-panel">
+              <div style="font-size: 10px; color: var(--text-muted); font-family: var(--mono); margin-bottom: 8px;">
+                typescript — sdk/ai-advisor.ts</div>
+              <pre><code>// Programmatic recovery loop intercepts failed bundles
+autoland.on("ai_decision", async (event) => {
+  if (event.decision.action === "RETRY") {
+    console.log(`[AI Advisor] mutating retry payload`);
+    console.log(`Scaled Tip multiplier: ${event.decision.params.tipMultiplier}x`);
+    // Re-signs and submits automatically
+  }
+});</code></pre>
+            </div>
+          </div>
+        </div>
 
-          <!-- Programmatic Safety Gate -->
-          <rect x="530" y="60" width="110" height="80" rx="4" fill="#0d1220" stroke="#f59e0b" />
-          <text x="545" y="85" fill="#f59e0b" font-family="sans-serif" font-size="11" font-weight="bold">Safety
-            Vault</text>
-          <text x="545" y="105" fill="#94a3b8" font-family="sans-serif" font-size="10">Max Tip check</text>
-          <text x="545" y="120" fill="#94a3b8" font-family="sans-serif" font-size="10">Slippage check</text>
+        <!-- Step 3: Event Telemetry -->
+        <div class="step-content" id="step-3">
+          <div class="step-info-grid">
+            <div class="step-desc-panel">
+              <h3>Asynchronous Event Telemetry</h3>
+              <p>
+                To support zero-overhead dashboards, UI monitors, and metrics monitoring (e.g. Grafana, Prometheus)
+                without blocking the critical transaction submission path, the AutoLand client extends Node's
+                <code>EventEmitter</code>. Operators can register listeners to capture telemetry updates, bundle
+                submissions, confirmation lifecycles, and AI Advisor decisions.
+              </p>
+            </div>
+            <div class="step-code-panel">
+              <div style="font-size: 10px; color: var(--text-muted); font-family: var(--mono); margin-bottom: 8px;">
+                typescript — sdk/event-emitter.ts</div>
+              <pre><code>// Register listeners on the AutoLand instance
+const client = new AutoLand({ connection });
 
-          <!-- Arrow -->
-          <path d="M650 100 H710" stroke="#10b981" stroke-width="1.5" />
-          <polygon points="710,96 710,104 717,100" fill="#10b981" />
+client.on("telemetry_update", (data) => {
+  console.log(`Live Slot: ${data.slot} | Competitor Tip/CU: ${data.maxCompetitorTipPerCU}`);
+});
 
-          <!-- Landed Retry -->
-          <rect x="730" y="70" width="50" height="60" rx="4" fill="#064e3b" stroke="#10b981" />
-          <text x="742" y="105" fill="#34d399" font-family="sans-serif" font-size="11" font-weight="bold">Retry</text>
-        </svg>
-      </div>
-
-      <div class="deck-card" style="margin-top: 24px; width: 100%;">
-        <h3 style="font-size: 14px; font-family: var(--mono); color: var(--accent-blue); margin-bottom: 8px;">
-          Event-Emitter Telemetry Hooks</h3>
-        <p style="font-size: 13px; color: var(--text-secondary); margin-bottom: 12px; line-height: 1.6;">
-          To support zero-overhead dashboards, UI monitors, and metrics monitoring (e.g. Grafana, Prometheus) without
-          blocking the critical transaction submission path, the AutoLand class extends Node's
-          <code>EventEmitter</code>. Operators can register listeners to capture:
-        </p>
-        <ul class="deck-bullet" style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
-          <li><strong>telemetry_update:</strong> Emitted every 400ms with congestion levels, alpha contention, and next
-            leader slot schedules.</li>
-          <li><strong>bundle_submitted:</strong> Dispatched immediately upon forwarding to regional Jito Block Engines.
-          </li>
-          <li><strong>bundle_accepted / processed / finalized:</strong> Emits transaction state transitions resolved by
-            Yellowstone gRPC confirmation filters.</li>
-          <li><strong>ai_decision:</strong> Emits LLM Advisor diagnostics, selected recovery path (RETRY, HOLD, ABORT,
-            FALLBACK_RPC), and parameter adjustments.</li>
-        </ul>
+client.on("bundle_submitted", (data) => {
+  console.log(`Bundle ID: ${data.bundleId} | Tip: ${data.tipLamports} lamports`);
+});</code></pre>
+            </div>
+          </div>
+        </div>
       </div>
     </section>
 
     <!-- SECTION 5: LIFECYCLE LOGS -->
     <section class="section" id="submissions">
       <div class="section-num">Section 05</div>
-      <h2>Submissions &amp; Operational Findings</h2>
+      <h2>Submissions &amp; Live Console</h2>
       <div class="section-desc">
         A summary of 10 real Jito bundle submissions verified from the running SQLite store. Slot heights and
-        transaction signatures can be cross-referenced on Solana explorers.
+        transaction signatures can be cross-referenced on Solana explorers. Filter the entries below to inspect
+        different landing strategies:
+      </div>
+
+      <!-- Live Console Filters -->
+      <div class="filter-bar">
+        <button class="filter-btn active" id="btn-all" onclick="filterLogs('all')">All Submissions (10)</button>
+        <button class="filter-btn" id="btn-landed" onclick="filterLogs('landed')">Landed Instantly (6)</button>
+        <button class="filter-btn" id="btn-recovered" onclick="filterLogs('recovered')">AI Recovered (3)</button>
+        <button class="filter-btn" id="btn-fallback" onclick="filterLogs('fallback')">RPC Fallback (1)</button>
       </div>
 
       <div class="execution-logs-list">
         <!-- Entry 01 -->
-        <div class="trace-card">
+        <div class="trace-card" data-status="landed">
           <div class="trace-hdr">
             <div class="trace-title">
               <span
@@ -1375,7 +2075,7 @@
         </div>
 
         <!-- Entry 02 -->
-        <div class="trace-card">
+        <div class="trace-card" data-status="recovered">
           <div class="trace-hdr">
             <div class="trace-title">
               <span
@@ -1432,7 +2132,7 @@
         </div>
 
         <!-- Entry 03 -->
-        <div class="trace-card">
+        <div class="trace-card" data-status="landed">
           <div class="trace-hdr">
             <div class="trace-title">
               <span
@@ -1501,7 +2201,7 @@
         </div>
 
         <!-- Entry 04 -->
-        <div class="trace-card">
+        <div class="trace-card" data-status="recovered">
           <div class="trace-hdr">
             <div class="trace-title">
               <span
@@ -1567,7 +2267,7 @@
         </div>
 
         <!-- Entry 05 -->
-        <div class="trace-card">
+        <div class="trace-card" data-status="recovered">
           <div class="trace-hdr">
             <div class="trace-title">
               <span
@@ -1642,7 +2342,7 @@
         </div>
 
         <!-- Entry 06 -->
-        <div class="trace-card">
+        <div class="trace-card" data-status="landed">
           <div class="trace-hdr">
             <div class="trace-title">
               <span
@@ -1711,7 +2411,7 @@
         </div>
 
         <!-- Entry 07 -->
-        <div class="trace-card">
+        <div class="trace-card" data-status="landed">
           <div class="trace-hdr">
             <div class="trace-title">
               <span
@@ -1780,7 +2480,7 @@
         </div>
 
         <!-- Entry 08 -->
-        <div class="trace-card">
+        <div class="trace-card" data-status="fallback">
           <div class="trace-hdr">
             <div class="trace-title">
               <span
@@ -1849,7 +2549,7 @@
         </div>
 
         <!-- Entry 09 -->
-        <div class="trace-card">
+        <div class="trace-card" data-status="landed">
           <div class="trace-hdr">
             <div class="trace-title">
               <span
@@ -1918,7 +2618,7 @@
         </div>
 
         <!-- Entry 10 -->
-        <div class="trace-card">
+        <div class="trace-card" data-status="landed">
           <div class="trace-hdr">
             <div class="trace-title">
               <span
@@ -1988,64 +2688,84 @@
       </div>
     </section>
 
-    <!-- SECTION 6: README QUESTIONS -->
+    <!-- SECTION 6: FAQ & INSIGHTS -->
     <section class="section" id="insights">
       <div class="section-num">Section 06</div>
-      <h2>README Questions &amp; Operational Insights</h2>
+      <h2>README FAQ &amp; Operational Insights</h2>
       <div class="section-desc">
         Operational findings answering the core Solana network questions asked during mainnet runs:
       </div>
 
-      <div class="grid-2" style="margin-top: 16px;">
-        <div class="deck-card">
-          <h3 style="font-size: 13px; font-family: var(--mono); color: var(--accent-blue);">Q1: processed_at vs
-            confirmed_at Delta</h3>
-          <p>
-            Measures the consensus vote propagation latency across the validator network.
-          </p>
-          <ul class="deck-bullet">
-            <li><strong>Optimal Network State:</strong> Delta sits at 400–800 ms (1–2 slots).</li>
-            <li><strong>Degraded Network State:</strong> Latency spikes above 2+ seconds due to transaction congestions
-              or micro-forking.</li>
-            <li><strong>SDK Action:</strong> AutoLand dynamically scales backpressure delays to defer sub-sequent
-              submissions until consensus stabilizes.</li>
-          </ul>
+      <div class="faq-accordion">
+
+        <!-- FAQ 1 -->
+        <div class="faq-item">
+          <div class="faq-header" onclick="toggleFaq(this)">
+            <h3 style="font-size: 13.5px; font-family: var(--mono); color: var(--accent-blue); margin: 0;">Q1:
+              processed_at vs confirmed_at Delta</h3>
+            <span class="faq-icon">▼</span>
+          </div>
+          <div class="faq-content">
+            <p style="font-size: 13px; color: var(--text-secondary); line-height: 1.6; margin: 10px 0 12px;">
+              Measures the consensus vote propagation latency across the validator network.
+            </p>
+            <ul class="deck-bullet">
+              <li><strong>Optimal Network State:</strong> Delta sits at 400–800 ms (1–2 slots).</li>
+              <li><strong>Degraded Network State:</strong> Latency spikes above 2+ seconds due to transaction
+                congestions or micro-forking.</li>
+              <li><strong>SDK Action:</strong> AutoLand dynamically scales backpressure delays to defer sub-sequent
+                submissions until consensus stabilizes.</li>
+            </ul>
+          </div>
         </div>
 
-        <div class="deck-card">
-          <h3 style="font-size: 13px; font-family: var(--mono); color: var(--accent-blue);">Q2: Why Avoid Finalized
-            Blockhashes</h3>
-          <p>
-            Solana blockhashes are valid for exactly 150 slots (~60 seconds). Finalized status requires 32 slots (~13–15
-            seconds).
-          </p>
-          <ul class="deck-bullet">
-            <li><strong>Validity Loss:</strong> A finalized blockhash burns 20–25% of its lifespan before the
-              transaction is signed.</li>
-            <li><strong>Staleness Risk:</strong> Congested blocks stretch slot times, causing finalized hashes to fail
-              validation on arrival.</li>
-            <li><strong>SDK Action:</strong> The stack queries blockhashes strictly at <code>confirmed</code> commitment
-              to preserve the maximum execution window.</li>
-          </ul>
+        <!-- FAQ 2 -->
+        <div class="faq-item">
+          <div class="faq-header" onclick="toggleFaq(this)">
+            <h3 style="font-size: 13.5px; font-family: var(--mono); color: var(--accent-blue); margin: 0;">Q2: Why Avoid
+              Finalized Blockhashes</h3>
+            <span class="faq-icon">▼</span>
+          </div>
+          <div class="faq-content">
+            <p style="font-size: 13px; color: var(--text-secondary); line-height: 1.6; margin: 10px 0 12px;">
+              Solana blockhashes are valid for exactly 150 slots (~60 seconds). Finalized status requires 32 slots
+              (~13–15 seconds).
+            </p>
+            <ul class="deck-bullet">
+              <li><strong>Validity Loss:</strong> A finalized blockhash burns 20–25% of its lifespan before the
+                transaction is signed.</li>
+              <li><strong>Staleness Risk:</strong> Congested blocks stretch slot times, causing finalized hashes to fail
+                validation on arrival.</li>
+              <li><strong>SDK Action:</strong> The stack queries blockhashes strictly at <code>confirmed</code>
+                commitment to preserve the maximum execution window.</li>
+            </ul>
+          </div>
         </div>
-      </div>
 
-      <div class="deck-card" style="margin-top: 24px; width: 100%;">
-        <h3 style="font-size: 13px; font-family: var(--mono); color: var(--accent-blue);">Q3: What Happens if a Jito
-          Leader Skips their Slot?</h3>
-        <p>
-          Because Jito bundles are not gossiped across the public P2P mempool, they route off-chain to a specific
-          scheduled validator. If that validator skips their slot, the block engine drops the bundle immediately.
-        </p>
-        <ul class="deck-bullet">
-          <li><strong>Leader Distance Tracking:</strong> AutoLand tracks scheduled leaders via
-            <code>LeaderWindowDetector</code> and holds dispatch if the slot window is unfavorable.
-          </li>
-          <li><strong>Multi-Region Broadcast:</strong> dispatches bundles to regional Jito Block Engines in parallel to
-            mitigate routing drops.</li>
-          <li><strong>AI advisor Intervention:</strong> If a drop is flagged, the AI Advisor immediately updates the
-            blockhash and tip for the next viable window.</li>
-        </ul>
+        <!-- FAQ 3 -->
+        <div class="faq-item">
+          <div class="faq-header" onclick="toggleFaq(this)">
+            <h3 style="font-size: 13.5px; font-family: var(--mono); color: var(--accent-blue); margin: 0;">Q3: What
+              Happens if a Jito Leader Skips their Slot?</h3>
+            <span class="faq-icon">▼</span>
+          </div>
+          <div class="faq-content">
+            <p style="font-size: 13px; color: var(--text-secondary); line-height: 1.6; margin: 10px 0 12px;">
+              Because Jito bundles are not gossiped across the public P2P mempool, they route off-chain to a specific
+              scheduled validator. If that validator skips their slot, the block engine drops the bundle immediately.
+            </p>
+            <ul class="deck-bullet">
+              <li><strong>Leader Distance Tracking:</strong> AutoLand tracks scheduled leaders via
+                <code>LeaderWindowDetector</code> and holds dispatch if the slot window is unfavorable.
+              </li>
+              <li><strong>Multi-Region Broadcast:</strong> dispatches bundles to regional Jito Block Engines in parallel
+                to mitigate routing drops.</li>
+              <li><strong>AI Advisor Intervention:</strong> If a drop is flagged, the AI Advisor immediately updates the
+                blockhash and tip for the next viable window.</li>
+            </ul>
+          </div>
+        </div>
+
       </div>
     </section>
 
@@ -2058,6 +2778,129 @@
     </div>
   </footer>
 
+  <script>
+    // --- GITHUB Dropdown Toggle ---
+    function toggleDropdown(event) {
+      event.stopPropagation();
+      const menu = document.getElementById('github-menu');
+      menu.classList.toggle('show');
+    }
+
+    // Close dropdown when clicking outside
+    document.addEventListener('click', function (event) {
+      const menu = document.getElementById('github-menu');
+      if (menu && menu.classList.contains('show')) {
+        const isClickInside = menu.contains(event.target) || event.target.closest('.nav-dropdown-trigger');
+        if (!isClickInside) {
+          menu.classList.remove('show');
+        }
+      }
+    });
+
+    // --- Priority Score Simulator ---
+    const tipSlider = document.getElementById('tip-slider');
+    const cuSlider = document.getElementById('cu-slider');
+
+    if (tipSlider && cuSlider) {
+      tipSlider.addEventListener('input', updateCalculator);
+      cuSlider.addEventListener('input', updateCalculator);
+      updateCalculator();
+    }
+
+    function updateCalculator() {
+      const tipSol = parseFloat(document.getElementById('tip-slider').value);
+      const cu = parseInt(document.getElementById('cu-slider').value);
+
+      document.getElementById('tip-val').innerText = tipSol.toFixed(3) + ' SOL';
+      document.getElementById('cu-val').innerText = cu.toLocaleString() + ' CUs';
+
+      const lamports = tipSol * 1000000000;
+      const score = lamports / cu;
+
+      document.getElementById('score-val').innerHTML = score.toFixed(2) + ' <span style="font-size:12px; font-weight:normal; color:var(--text-muted);">lamports/CU</span>';
+
+      const badge = document.getElementById('calc-badge');
+      if (score > 50) {
+        badge.className = 'calc-badge win';
+        badge.innerText = 'STATUS: OUTBIDS COMPETITOR (Landed first)';
+      } else if (score === 50) {
+        badge.className = 'calc-badge win';
+        badge.innerText = 'STATUS: TIE SCORE (Sorting contention)';
+      } else {
+        badge.className = 'calc-badge loss';
+        badge.innerText = 'STATUS: OUTBID / DROPPED (Insufficient density)';
+      }
+    }
+
+    // --- Stepper Navigation ---
+    function switchStep(index) {
+      // Toggle button active states
+      const buttons = document.querySelectorAll('.step-btn');
+      buttons.forEach((btn, idx) => {
+        if (idx === index) {
+          btn.classList.add('active');
+        } else {
+          btn.classList.remove('active');
+        }
+      });
+
+      // Toggle content panel active states
+      const panels = document.querySelectorAll('.step-content');
+      panels.forEach((panel, idx) => {
+        if (idx === index) {
+          panel.classList.add('active');
+        } else {
+          panel.classList.remove('active');
+        }
+      });
+    }
+
+    // --- Live Logs Filter ---
+    function filterLogs(status) {
+      // Toggle button active state
+      const buttons = document.querySelectorAll('.filter-btn');
+      buttons.forEach(btn => btn.classList.remove('active'));
+
+      if (status === 'all') document.getElementById('btn-all').classList.add('active');
+      if (status === 'landed') document.getElementById('btn-landed').classList.add('active');
+      if (status === 'recovered') document.getElementById('btn-recovered').classList.add('active');
+      if (status === 'fallback') document.getElementById('btn-fallback').classList.add('active');
+
+      // Show/hide cards
+      const cards = document.querySelectorAll('.trace-card');
+      cards.forEach(card => {
+        const cardStatus = card.getAttribute('data-status');
+        if (status === 'all' || cardStatus === status) {
+          card.style.display = 'block';
+        } else {
+          card.style.display = 'none';
+        }
+      });
+    }
+
+    // --- FAQ Accordion ---
+    function toggleFaq(header) {
+      const item = header.parentElement;
+      const content = item.querySelector('.faq-content');
+
+      // Close other active items
+      const activeItems = document.querySelectorAll('.faq-item.active');
+      activeItems.forEach(activeItem => {
+        if (activeItem !== item) {
+          activeItem.classList.remove('active');
+          activeItem.querySelector('.faq-content').style.maxHeight = null;
+        }
+      });
+
+      // Toggle current item
+      item.classList.toggle('active');
+      if (item.classList.contains('active')) {
+        content.style.maxHeight = content.scrollHeight + "px";
+      } else {
+        content.style.maxHeight = null;
+      }
+    }
+  </script>
 </body>
 
 </html>
