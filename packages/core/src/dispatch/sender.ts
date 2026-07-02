@@ -266,6 +266,11 @@ export class BundleDispatcher {
     txInput: VersionedTransaction | Transaction | TransactionInstruction[] | string | Buffer | BundleTransaction[],
     opts: AutoLandSubmitOptions = {}
   ): Promise<AutoLandResult> {
+    if (opts.urgency === "normal") {
+      log.info("[Dispatcher] Urgency is NORMAL. Bypassing private tip bidding stack. Dispatching to public RPC...");
+      return this.sendToPublicRpc(txInput, opts);
+    }
+
     const parsed = this.parseTransactionInput(txInput);
 
     const stream = this.ctx.getStream();
@@ -293,6 +298,118 @@ export class BundleDispatcher {
     const isPresigned = !(Array.isArray(parsed));
 
     return this.runOneSubmitAttempt({ attempt: 1, history: [] }, parsed, isPresigned, opts);
+  }
+
+  private async sendToPublicRpc(
+    txInput: VersionedTransaction | Transaction | TransactionInstruction[] | string | Buffer | BundleTransaction[],
+    opts: AutoLandSubmitOptions
+  ): Promise<AutoLandResult> {
+    const parsed = this.parseTransactionInput(txInput);
+    const serializedTxs: Buffer[] = [];
+    const signatures: string[] = [];
+
+    const nowStr = new Date().toISOString();
+    const dummyLifecycle: LifecycleEntry = {
+      bundle_id: "public-rpc-submission",
+      signatures: [],
+      tip_lamports: 0,
+      tip_account: "",
+      attempt: 1,
+      stages: {
+        submitted: { slot: 0, ts: nowStr }
+      },
+      deltas_ms: {},
+      failure: null,
+      confirmed_via: "status_api"
+    };
+
+    try {
+      const connection = this.ctx.sdkConnection;
+
+      if (parsed instanceof VersionedTransaction) {
+        serializedTxs.push(Buffer.from(parsed.serialize()));
+      } else if (parsed instanceof Transaction) {
+        const tx = parsed;
+        if (tx.signatures.length === 0 || !tx.signature) {
+          if (!this.ctx.sdkWallet) {
+            throw new Error("WALLET_SECRET_KEY is required to sign transactions.");
+          }
+          tx.recentBlockhash = (await connection.getLatestBlockhash("confirmed")).blockhash;
+          tx.sign(this.ctx.sdkWallet, ...(opts.extraSigners || []));
+        }
+        serializedTxs.push(tx.serialize());
+      } else if (Array.isArray(parsed)) {
+        if (parsed.length > 0 && 'instructions' in parsed[0]) {
+          const bundle = parsed as BundleTransaction[];
+          for (const txObj of bundle) {
+            const tx = new Transaction().add(...txObj.instructions);
+            tx.feePayer = this.ctx.sdkWallet.publicKey;
+            tx.recentBlockhash = (await connection.getLatestBlockhash("confirmed")).blockhash;
+            tx.sign(this.ctx.sdkWallet, ...(txObj.signers || []), ...(opts.extraSigners || []));
+            serializedTxs.push(tx.serialize());
+          }
+        } else {
+          const tx = new Transaction().add(...(parsed as TransactionInstruction[]));
+          tx.feePayer = this.ctx.sdkWallet.publicKey;
+          tx.recentBlockhash = (await connection.getLatestBlockhash("confirmed")).blockhash;
+          tx.sign(this.ctx.sdkWallet, ...(opts.extraSigners || []));
+          serializedTxs.push(tx.serialize());
+        }
+      }
+
+      for (const serialized of serializedTxs) {
+        const sig = await connection.sendRawTransaction(serialized, {
+          skipPreflight: false,
+          preflightCommitment: "confirmed"
+        });
+        signatures.push(sig);
+      }
+
+      log.info("Sent transaction(s) to public RPC", { signatures });
+
+      let lastLandedSlot = 0;
+      const latestBlockhash = await connection.getLatestBlockhash("confirmed");
+      
+      for (const sig of signatures) {
+        const confirmation = await connection.confirmTransaction({
+          signature: sig,
+          blockhash: latestBlockhash.blockhash,
+          lastValidBlockHeight: latestBlockhash.lastValidBlockHeight
+        }, "confirmed");
+
+        if (confirmation.value.err) {
+          throw new Error(`Transaction failed: ${JSON.stringify(confirmation.value.err)}`);
+        }
+      }
+
+      const txDetails = await connection.getTransaction(signatures[0], {
+        commitment: "confirmed",
+        maxSupportedTransactionVersion: 0
+      });
+      lastLandedSlot = txDetails?.slot || 0;
+
+      dummyLifecycle.stages.submitted = { slot: lastLandedSlot, ts: nowStr };
+      dummyLifecycle.stages.processed = { slot: lastLandedSlot, ts: nowStr };
+      dummyLifecycle.stages.confirmed = { slot: lastLandedSlot, ts: nowStr };
+      dummyLifecycle.signatures = signatures;
+
+      return {
+        bundleId: "public-rpc-submission",
+        landed: true,
+        signature: signatures[0],
+        slot: lastLandedSlot,
+        lifecycle: dummyLifecycle
+      };
+
+    } catch (err) {
+      log.error("Public RPC submission failed", { error: String(err) });
+      return {
+        bundleId: "public-rpc-submission",
+        landed: false,
+        lifecycle: dummyLifecycle,
+        error: String(err)
+      };
+    }
   }
 
   private parseTransactionInput(

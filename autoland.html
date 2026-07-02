@@ -1,0 +1,1431 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>AutoLand — Solana Contention Engine</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#05070d;
+  --bg-2:#0a0f1c;
+  --ink:#eef2ff;
+  --dim:#8892b0;
+  --mute:#5a6580;
+  --line:rgba(255,255,255,.07);
+  --cyan:#22e5ff;
+  --lime:#a6ff5f;
+  --amber:#ffb547;
+  --pink:#ff5fa2;
+  --violet:#8b7bff;
+  --grad: conic-gradient(from 140deg at 50% 50%, #22e5ff, #8b7bff, #ff5fa2, #ffb547, #a6ff5f, #22e5ff);
+  --mono:'JetBrains Mono',ui-monospace,monospace;
+  --sans:'Inter',system-ui,sans-serif;
+  --serif:'Plus Jakarta Sans',system-ui,sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{
+  background:var(--bg);
+  color:var(--ink);
+  font-family:var(--sans);
+  font-size:15px;
+  line-height:1.6;
+  -webkit-font-smoothing:antialiased;
+  overflow-x:hidden;
+  position:relative;
+}
+/* Animated background */
+#bg-canvas{position:fixed;inset:0;z-index:-2;opacity:.55}
+body::before{
+  content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;
+  background:
+    radial-gradient(1200px 700px at 15% -10%, rgba(34,229,255,.12), transparent 60%),
+    radial-gradient(900px 600px at 100% 10%, rgba(139,123,255,.10), transparent 60%),
+    radial-gradient(700px 500px at 50% 110%, rgba(255,95,162,.08), transparent 60%),
+    linear-gradient(rgba(255,255,255,.02) 1px,transparent 1px) 0 0/48px 48px,
+    linear-gradient(90deg,rgba(255,255,255,.02) 1px,transparent 1px) 0 0/48px 48px;
+}
+::selection{background:var(--cyan);color:#04121a}
+
+/* NAV */
+nav.top{
+  position:fixed;top:0;left:0;right:0;z-index:50;
+  padding:14px 32px;display:flex;align-items:center;justify-content:space-between;
+  backdrop-filter:blur(14px);
+  background:linear-gradient(180deg,rgba(5,7,13,.85),rgba(5,7,13,.4));
+  border-bottom:1px solid var(--line);
+}
+.brand{display:flex;align-items:center;gap:10px;font-family:var(--mono);font-size:13px;letter-spacing:.14em}
+.brand-mark{
+  width:26px;height:26px;border-radius:8px;background:var(--grad);
+  animation:spin 14s linear infinite;
+  position:relative;
+}
+.brand-mark::after{content:"";position:absolute;inset:3px;border-radius:6px;background:var(--bg)}
+.brand-mark::before{content:"";position:absolute;inset:9px;border-radius:50%;background:var(--cyan);box-shadow:0 0 12px var(--cyan)}
+@keyframes spin{to{transform:rotate(360deg)}}
+nav.top ul{display:flex;gap:22px;list-style:none}
+nav.top a{color:var(--dim);text-decoration:none;font-size:12.5px;font-family:var(--mono);letter-spacing:.06em;transition:color .2s}
+nav.top a:hover{color:var(--cyan)}
+.pill{padding:7px 14px;border:1px solid var(--line);border-radius:100px;color:var(--ink);font-family:var(--mono);font-size:11px;text-decoration:none;transition:all .2s}
+.pill:hover{border-color:var(--cyan);color:var(--cyan);box-shadow:0 0 24px rgba(34,229,255,.25)}
+@media(max-width:820px){nav.top ul{display:none}}
+
+.wrap{max-width:1180px;margin:0 auto;padding:0 32px}
+
+/* HERO */
+.hero{padding:180px 0 100px;position:relative;text-align:center}
+.hero .badge{
+  display:inline-flex;align-items:center;gap:10px;
+  padding:8px 16px;border-radius:100px;
+  background:rgba(34,229,255,.06);border:1px solid rgba(34,229,255,.25);
+  font-family:var(--mono);font-size:11px;letter-spacing:.14em;color:var(--cyan);
+  margin-bottom:36px;
+}
+.dot{width:7px;height:7px;border-radius:50%;background:var(--cyan);box-shadow:0 0 12px var(--cyan);animation:pulse 1.6s infinite}
+@keyframes pulse{0%,100%{opacity:.4;transform:scale(.9)}50%{opacity:1;transform:scale(1.2)}}
+.hero h1{
+  font-family:var(--serif);font-weight:800;
+  font-size:clamp(46px,7.5vw,104px);
+  line-height:.98;letter-spacing:-.02em;margin-bottom:28px;
+}
+.hero h1 em{font-style:italic;background:linear-gradient(120deg,var(--cyan),var(--violet) 60%,var(--pink));-webkit-background-clip:text;background-clip:text;color:transparent}
+.hero p.sub{max-width:640px;margin:0 auto 40px;color:var(--dim);font-size:17px}
+.cta-row{display:flex;justify-content:center;gap:14px;flex-wrap:wrap}
+.btn{
+  display:inline-flex;align-items:center;gap:10px;
+  padding:14px 24px;border-radius:100px;text-decoration:none;font-family:var(--mono);
+  font-size:12.5px;letter-spacing:.08em;text-transform:uppercase;transition:all .25s;cursor:pointer;border:none;
+}
+.btn.primary{background:var(--ink);color:#05070d}
+.btn.primary:hover{transform:translateY(-2px);box-shadow:0 20px 40px -10px rgba(238,242,255,.35)}
+.btn.ghost{background:transparent;color:var(--ink);border:1px solid var(--line)}
+.btn.ghost:hover{border-color:var(--cyan);color:var(--cyan)}
+
+.tags{margin-top:56px;display:flex;justify-content:center;gap:8px;flex-wrap:wrap}
+.tag{font-family:var(--mono);font-size:10.5px;letter-spacing:.1em;color:var(--mute);padding:6px 12px;border:1px solid var(--line);border-radius:100px}
+
+/* MARQUEE STATS */
+.stats-strip{
+  margin:60px 0;padding:28px 0;
+  border-top:1px solid var(--line);border-bottom:1px solid var(--line);
+  display:grid;grid-template-columns:repeat(4,1fr);gap:24px;
+}
+.stat{text-align:center;padding:0 12px;border-right:1px solid var(--line)}
+.stat:last-child{border-right:none}
+.stat .n{font-family:var(--serif);font-size:44px;font-weight:800;line-height:1;background:linear-gradient(180deg,#fff,#8892b0);-webkit-background-clip:text;background-clip:text;color:transparent}
+.stat .l{font-family:var(--mono);font-size:10.5px;letter-spacing:.14em;color:var(--mute);text-transform:uppercase;margin-top:8px}
+@media(max-width:720px){.stats-strip{grid-template-columns:repeat(2,1fr)}.stat:nth-child(2){border-right:none}}
+
+/* SECTIONS */
+section{padding:100px 0;position:relative}
+.sec-num{font-family:var(--mono);font-size:11px;letter-spacing:.24em;color:var(--cyan);margin-bottom:14px;display:flex;align-items:center;gap:12px}
+.sec-num::before{content:"";width:24px;height:1px;background:var(--cyan)}
+.sec-title{font-family:var(--serif);font-weight:700;font-size:clamp(34px,4.5vw,56px);line-height:1.05;letter-spacing:-.015em;margin-bottom:20px;max-width:900px}
+.sec-desc{color:var(--dim);font-size:16px;max-width:720px;margin-bottom:56px}
+
+/* CARDS */
+.grid{display:grid;gap:20px}
+.cols-3{grid-template-columns:repeat(3,1fr)}
+.cols-2{grid-template-columns:1fr 1fr}
+@media(max-width:820px){.cols-3,.cols-2{grid-template-columns:1fr}}
+.card{
+  padding:28px;border:1px solid var(--line);border-radius:16px;
+  background:linear-gradient(180deg,rgba(255,255,255,.02),rgba(255,255,255,0));
+  position:relative;overflow:hidden;transition:transform .3s,border-color .3s;
+}
+.card::before{
+  content:"";position:absolute;inset:-1px;border-radius:16px;padding:1px;
+  background:linear-gradient(135deg,transparent,var(--cyan),transparent 40%);
+  -webkit-mask:linear-gradient(#000,#000) content-box,linear-gradient(#000,#000);
+  -webkit-mask-composite:xor;mask-composite:exclude;opacity:0;transition:opacity .3s;
+}
+.card:hover{transform:translateY(-4px)}
+.card:hover::before{opacity:1}
+.card .n{font-family:var(--mono);font-size:11px;color:var(--mute);letter-spacing:.14em;margin-bottom:14px}
+.card h3{font-family:var(--serif);font-size:24px;font-weight:600;margin-bottom:12px;letter-spacing:-.01em}
+.card p{color:var(--dim);font-size:14.5px}
+.card code{font-family:var(--mono);font-size:12.5px;background:rgba(34,229,255,.08);color:var(--cyan);padding:2px 6px;border-radius:4px}
+
+/* Interactive conflict-set visual */
+.conflict-viz{
+  margin-top:60px;padding:40px;border:1px solid var(--line);border-radius:20px;
+  background:radial-gradient(600px 300px at 50% 0%,rgba(34,229,255,.06),transparent 70%);
+}
+.conflict-lane{display:grid;grid-template-columns:1fr auto 1fr auto 1fr;align-items:center;gap:20px}
+.lane-col{display:flex;flex-direction:column;gap:10px}
+.tx-chip{
+  padding:12px 16px;border-radius:10px;border:1px solid var(--line);
+  background:rgba(255,255,255,.02);font-family:var(--mono);font-size:12px;
+  display:flex;justify-content:space-between;align-items:center;
+  transition:all .3s;cursor:pointer;
+}
+.tx-chip:hover{border-color:var(--violet);transform:translateX(4px)}
+.tx-chip .s{color:var(--mute);font-size:10px}
+.arrow{color:var(--mute);font-family:var(--mono)}
+.bin{
+  padding:24px;border-radius:14px;border:1.5px solid rgba(139,123,255,.4);
+  background:rgba(139,123,255,.05);text-align:center;
+}
+.bin-t{font-family:var(--mono);font-size:11px;letter-spacing:.14em;color:var(--violet);margin-bottom:10px}
+.bin-lock{font-family:var(--mono);font-size:13px;color:var(--ink);margin-bottom:16px}
+.bin-auction{padding:8px;border:1px dashed rgba(255,181,71,.3);border-radius:8px;color:var(--amber);font-family:var(--mono);font-size:11px}
+.block-out{
+  padding:28px 20px;border-radius:14px;border:1.5px solid rgba(166,255,95,.4);
+  background:rgba(166,255,95,.05);text-align:center;
+  font-family:var(--mono);font-size:14px;color:var(--lime);font-weight:600;letter-spacing:.1em;
+}
+@media(max-width:900px){.conflict-lane{grid-template-columns:1fr;text-align:center}.arrow{transform:rotate(90deg)}}
+
+/* Formula + compare */
+.formula{
+  margin:48px 0;padding:32px;border-radius:16px;text-align:center;
+  border:1px solid rgba(34,229,255,.2);
+  background:linear-gradient(180deg,rgba(34,229,255,.06),transparent);
+  font-family:var(--mono);font-size:16px;color:var(--ink);
+}
+.formula span{color:var(--cyan)}
+
+.compare{display:grid;grid-template-columns:1fr 1fr;gap:20px}
+@media(max-width:820px){.compare{grid-template-columns:1fr}}
+.cmp{padding:28px;border-radius:16px;border:1px solid var(--line);position:relative;overflow:hidden}
+.cmp.win{border-color:rgba(166,255,95,.35);background:radial-gradient(400px 200px at 50% 0%,rgba(166,255,95,.08),transparent)}
+.cmp.lose{border-color:rgba(255,95,162,.25);background:radial-gradient(400px 200px at 50% 0%,rgba(255,95,162,.06),transparent)}
+.cmp h4{font-family:var(--mono);font-size:11.5px;letter-spacing:.14em;color:var(--mute);text-transform:uppercase;margin-bottom:20px}
+.cmp .row{display:flex;justify-content:space-between;padding:10px 0;border-bottom:1px dashed var(--line);font-size:13.5px;color:var(--dim)}
+.cmp .row:last-of-type{border-bottom:none}
+.cmp .row b{color:var(--ink);font-family:var(--mono)}
+.cmp .verdict{margin-top:16px;padding:10px;border-radius:8px;text-align:center;font-family:var(--mono);font-size:11.5px;letter-spacing:.1em}
+.cmp.win .verdict{background:rgba(166,255,95,.12);color:var(--lime)}
+.cmp.lose .verdict{background:rgba(255,95,162,.1);color:var(--pink)}
+
+/* SIMULATOR */
+.sim{
+  margin-top:60px;padding:40px;border-radius:20px;
+  border:1px solid var(--line);
+  background:linear-gradient(180deg,rgba(255,255,255,.015),transparent);
+}
+.sim-head{display:flex;justify-content:space-between;align-items:end;margin-bottom:28px;flex-wrap:wrap;gap:16px}
+.sim-head h3{font-family:var(--serif);font-size:28px;font-weight:700}
+.sim-head p{color:var(--dim);font-size:13px;max-width:400px}
+.sim-grid{display:grid;grid-template-columns:1fr 1fr;gap:40px;align-items:center}
+@media(max-width:820px){.sim-grid{grid-template-columns:1fr}}
+.slider-block{margin-bottom:24px}
+.slider-block .hd{display:flex;justify-content:space-between;font-family:var(--mono);font-size:12px;margin-bottom:12px}
+.slider-block .hd .v{color:var(--cyan)}
+input[type=range]{
+  -webkit-appearance:none;width:100%;height:4px;border-radius:100px;
+  background:linear-gradient(90deg,var(--cyan) var(--p,50%),rgba(255,255,255,.08) var(--p,50%));
+  outline:none;
+}
+input[type=range]::-webkit-slider-thumb{
+  -webkit-appearance:none;width:20px;height:20px;border-radius:50%;
+  background:var(--ink);border:2px solid var(--cyan);cursor:pointer;
+  box-shadow:0 0 20px rgba(34,229,255,.5);
+}
+input[type=range]::-moz-range-thumb{width:20px;height:20px;border-radius:50%;background:var(--ink);border:2px solid var(--cyan);cursor:pointer}
+
+.gauge{
+  position:relative;aspect-ratio:1;max-width:320px;margin:0 auto;
+  display:flex;align-items:center;justify-content:center;flex-direction:column;
+}
+.gauge svg{position:absolute;inset:0;transform:rotate(-90deg)}
+.gauge .bg-r{stroke:rgba(255,255,255,.06);stroke-width:14;fill:none}
+.gauge .fg-r{stroke:url(#gg);stroke-width:14;fill:none;stroke-linecap:round;transition:stroke-dashoffset .5s ease}
+.gauge .num{font-family:var(--serif);font-size:56px;font-weight:800;line-height:1}
+.gauge .lb{font-family:var(--mono);font-size:11px;color:var(--mute);letter-spacing:.14em;margin-top:8px}
+.status{margin-top:20px;padding:10px 16px;border-radius:100px;font-family:var(--mono);font-size:11px;letter-spacing:.1em;text-align:center;transition:all .3s}
+.status.win{background:rgba(166,255,95,.12);color:var(--lime);border:1px solid rgba(166,255,95,.3)}
+.status.lose{background:rgba(255,95,162,.1);color:var(--pink);border:1px solid rgba(255,95,162,.3)}
+
+/* CONSOLE */
+.console{
+  padding:0;border-radius:16px;border:1px solid var(--line);overflow:hidden;
+  background:#04070f;font-family:var(--mono);font-size:12.5px;
+  box-shadow:0 40px 80px -30px rgba(0,0,0,.6);
+}
+.console-head{display:flex;align-items:center;gap:8px;padding:12px 16px;background:#080d18;border-bottom:1px solid var(--line)}
+.dot-r{width:11px;height:11px;border-radius:50%}
+.dot-r.r{background:#ff5f5f}.dot-r.y{background:#ffb547}.dot-r.g{background:#a6ff5f}
+.console-head .t{margin-left:auto;color:var(--mute);font-size:11px}
+.console-body{padding:20px 24px;min-height:340px;line-height:1.9}
+.log-line{opacity:0;animation:log 3s forwards}
+.log-line:nth-child(1){animation-delay:.1s}
+.log-line:nth-child(2){animation-delay:.6s}
+.log-line:nth-child(3){animation-delay:1.1s}
+.log-line:nth-child(4){animation-delay:1.6s}
+.log-line:nth-child(5){animation-delay:2.1s}
+.log-line:nth-child(6){animation-delay:2.6s}
+.log-line:nth-child(7){animation-delay:3.1s}
+.log-line:nth-child(8){animation-delay:3.6s}
+@keyframes log{0%{opacity:0;transform:translateX(-6px)}20%,100%{opacity:1;transform:translateX(0)}}
+.tag-b{color:var(--cyan)} .tag-p{color:var(--violet)} .tag-g{color:var(--lime)} .tag-a{color:var(--amber)} .tag-m{color:var(--dim)}
+.cursor{display:inline-block;width:8px;height:14px;background:var(--cyan);animation:blink 1s infinite;vertical-align:middle;margin-left:4px}
+@keyframes blink{50%{opacity:0}}
+
+/* PIPELINE */
+.pipeline{margin-top:60px}
+.pipe-stages{display:grid;grid-template-columns:repeat(6,1fr);gap:8px;position:relative}
+@media(max-width:900px){.pipe-stages{grid-template-columns:repeat(2,1fr)}}
+.stage{
+  padding:22px 16px;border-radius:14px;border:1px solid var(--line);
+  background:linear-gradient(180deg,rgba(255,255,255,.02),transparent);
+  cursor:pointer;transition:all .3s;position:relative;
+}
+.stage:hover,.stage.active{border-color:var(--cyan);background:rgba(34,229,255,.06);transform:translateY(-4px)}
+.stage .num{font-family:var(--mono);font-size:10.5px;color:var(--cyan);letter-spacing:.14em}
+.stage h4{font-family:var(--serif);font-size:19px;font-weight:600;margin:8px 0 6px;letter-spacing:-.01em}
+.stage p{font-size:12px;color:var(--dim)}
+
+/* BUNDLES */
+.bundle{
+  padding:24px;border:1px solid var(--line);border-radius:14px;margin-bottom:14px;
+  background:linear-gradient(180deg,rgba(255,255,255,.015),transparent);
+  transition:border-color .2s;
+}
+.bundle:hover{border-color:rgba(34,229,255,.3)}
+.bundle-hd{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;margin-bottom:16px}
+.bundle-hd .h{font-family:var(--mono);font-size:12px;color:var(--dim);word-break:break-all}
+.badge-live{padding:4px 10px;border-radius:100px;background:rgba(166,255,95,.12);color:var(--lime);font-family:var(--mono);font-size:10px;letter-spacing:.1em}
+.bundle-meta{display:grid;grid-template-columns:repeat(4,1fr);gap:16px}
+@media(max-width:720px){.bundle-meta{grid-template-columns:repeat(2,1fr)}}
+.bmet .k{font-family:var(--mono);font-size:10.5px;color:var(--mute);letter-spacing:.1em}
+.bmet .v{font-family:var(--mono);font-size:13.5px;color:var(--ink);margin-top:4px}
+
+/* FAQ */
+.faq-item{border-bottom:1px solid var(--line)}
+.faq-q{
+  width:100%;padding:24px 0;background:none;border:none;text-align:left;color:var(--ink);
+  display:flex;justify-content:space-between;align-items:center;cursor:pointer;
+  font-family:var(--serif);font-size:22px;font-weight:600;transition:color .2s;
+}
+.faq-q:hover{color:var(--cyan)}
+.faq-q .k{font-family:var(--mono);font-size:11px;color:var(--cyan);letter-spacing:.14em;margin-right:16px}
+.faq-q .ic{font-family:var(--mono);color:var(--mute);transition:transform .3s;font-size:20px}
+.faq-item.open .faq-q .ic{transform:rotate(45deg);color:var(--cyan)}
+.faq-a{max-height:0;overflow:hidden;transition:max-height .4s ease}
+.faq-a-inner{padding:0 0 28px;color:var(--dim);font-size:14.5px}
+.faq-a-inner ul{list-style:none;margin-top:14px}
+.faq-a-inner li{padding:8px 0 8px 20px;position:relative}
+.faq-a-inner li::before{content:"→";position:absolute;left:0;color:var(--cyan);font-family:var(--mono)}
+.faq-a-inner b{color:var(--ink)}
+.faq-item.open .faq-a{max-height:600px}
+
+/* Callout */
+.callout{
+  margin:40px 0;padding:24px 28px;border-radius:14px;
+  border-left:3px solid var(--cyan);
+  background:linear-gradient(90deg,rgba(34,229,255,.06),transparent);
+  font-size:14.5px;color:var(--dim);
+}
+.callout b{color:var(--ink)}
+
+/* CODE PANELS */
+.split{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:32px}
+@media(max-width:900px){.split{grid-template-columns:1fr}}
+.panel{background:#04070f;border:1px solid var(--line);border-radius:14px;overflow:hidden}
+.panel-hd{display:flex;justify-content:space-between;padding:12px 16px;border-bottom:1px solid var(--line);font-family:var(--mono);font-size:11px}
+.panel-hd .l{color:var(--cyan);letter-spacing:.1em}
+.panel-hd .r{color:var(--mute)}
+.panel pre{padding:20px;margin:0;font-family:var(--mono);font-size:12.5px;color:var(--dim);line-height:1.75;overflow-x:auto}
+.panel pre .kw{color:var(--violet)} .panel pre .st{color:var(--lime)} .panel pre .fn{color:var(--cyan)} .panel pre .cm{color:var(--mute);font-style:italic}
+
+/* FOOTER */
+footer{padding:60px 0 40px;border-top:1px solid var(--line);margin-top:80px}
+.foot{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:20px}
+.foot .l{font-family:var(--mono);font-size:11.5px;color:var(--mute);letter-spacing:.06em}
+.foot a{color:var(--cyan);text-decoration:none;font-family:var(--mono);font-size:11.5px;letter-spacing:.06em}
+.foot a:hover{text-decoration:underline}
+
+/* reveal */
+.reveal{opacity:0;transform:translateY(30px);transition:opacity .8s,transform .8s}
+.reveal.in{opacity:1;transform:none}
+
+/* Scroll indicator */
+.scroll-progress{position:fixed;top:0;left:0;height:2px;background:linear-gradient(90deg,var(--cyan),var(--violet),var(--pink));z-index:100;width:0%;transition:width .1s}
+/* Trace Logs Console Styles */
+.execution-logs-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin-top: 24px;
+}
+.trace-card {
+  background: var(--bg-2);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 20px;
+  transition: border-color 0.2s, transform 0.2s;
+}
+.trace-card:hover {
+  border-color: var(--cyan);
+  transform: translateY(-2px);
+}
+.trace-hdr {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+  border-bottom: 1px solid var(--line);
+  padding-bottom: 12px;
+  margin-bottom: 14px;
+}
+.trace-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.trace-title h3 {
+  font-family: var(--mono);
+  font-size: 13px;
+  color: var(--ink);
+  font-weight: 500;
+  word-break: break-all;
+}
+.trace-meta {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+.trace-badge {
+  font-family: var(--sans);
+  font-size: 10px;
+  font-weight: 700;
+  padding: 4px 8px;
+  border-radius: 4px;
+  text-transform: uppercase;
+  letter-spacing: .06em;
+}
+.trace-badge.success {
+  background-color: rgba(166, 255, 95, 0.1);
+  color: var(--lime);
+  border: 1px solid rgba(166, 255, 95, 0.2);
+}
+.trace-badge.recovered {
+  background-color: rgba(255, 181, 71, 0.1);
+  color: var(--amber);
+  border: 1px solid rgba(255, 181, 71, 0.2);
+}
+.trace-badge.fallback {
+  background-color: rgba(34, 229, 255, 0.1);
+  color: var(--cyan);
+  border: 1px solid rgba(34, 229, 255, 0.2);
+}
+.trace-timeline {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background-color: var(--bg);
+  border: 1px solid var(--line);
+  padding: 10px 16px;
+  border-radius: 6px;
+  margin: 12px 0;
+  overflow-x: auto;
+  gap: 8px;
+}
+.timeline-node {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11.5px;
+  font-family: var(--mono);
+  white-space: nowrap;
+}
+.timeline-label {
+  color: var(--mute);
+}
+.timeline-val {
+  color: var(--ink);
+  font-weight: 500;
+}
+.timeline-arrow {
+  color: var(--mute);
+  font-size: 10px;
+}
+.trace-metrics-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+  font-size: 12px;
+  color: var(--dim);
+  margin-top: 10px;
+}
+@media (max-width: 768px) {
+  .trace-metrics-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+.metric-item {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.metric-lbl {
+  font-size: 10px;
+  text-transform: uppercase;
+  color: var(--mute);
+  font-family: var(--mono);
+}
+.metric-val {
+  font-family: var(--mono);
+  color: var(--ink);
+  font-weight: 500;
+}
+.recovery-callout {
+  margin-top: 12px;
+  padding: 12px 16px;
+  background-color: rgba(255, 181, 71, 0.04);
+  border-left: 3px solid var(--amber);
+  border-radius: 4px;
+  font-size: 12.5px;
+  line-height: 1.5;
+  color: var(--dim);
+}
+.recovery-callout strong {
+  color: var(--amber);
+}
+
+/* Filter bar and buttons */
+.filter-bar {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 24px;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.filter-btn {
+  background-color: var(--bg-2);
+  border: 1px solid var(--line);
+  color: var(--dim);
+  padding: 8px 16px;
+  font-size: 11.5px;
+  font-family: var(--mono);
+  font-weight: 500;
+  border-radius: 100px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+.filter-btn.active, .filter-btn:hover {
+  background-color: var(--cyan);
+  border-color: var(--cyan);
+  color: #05070d;
+  font-weight: 600;
+  box-shadow: 0 0 16px rgba(34, 229, 255, 0.25);
+}
+</style>
+</head>
+<body>
+<div class="scroll-progress" id="progress"></div>
+<canvas id="bg-canvas"></canvas>
+
+<nav class="top">
+  <div class="brand"><div class="brand-mark"></div>AUTOLAND</div>
+  <ul>
+    <li><a href="#context">Context</a></li>
+    <li><a href="#auction">Auction</a></li>
+    <li><a href="#engine">Engine</a></li>
+    <li><a href="#pipelines">Pipelines</a></li>
+    <li><a href="#console">Console</a></li>
+    <li><a href="#faq">FAQ</a></li>
+  </ul>
+  <a class="pill" href="https://github.com/Timadigwe/Autoland" target="_blank">GitHub ↗</a>
+</nav>
+
+<header class="hero">
+  <div class="wrap">
+    <div class="badge"><span class="dot"></span> LIVE ON WORLDCUP/SOL POOL · MAINNET</div>
+    <h1>Landing Solana<br>transactions<br><em>under extreme contention.</em></h1>
+    <p class="sub">A developer-first execution SDK. Decode account contention with sub-100ms Yellowstone telemetry, optimize compute, and self-heal drops with AI diagnostics — to win block space, every slot.</p>
+    <div class="cta-row">
+      <a href="#context" class="btn primary">Explore the spec →</a>
+      <a href="#console" class="btn ghost">Live console</a>
+    </div>
+    <div class="tags">
+      <span class="tag">@autoland/core</span>
+      <span class="tag">v1.2.0</span>
+      <span class="tag">Jito Bundles</span>
+      <span class="tag">Yellowstone gRPC</span>
+      <span class="tag">MIT Licensed</span>
+    </div>
+
+    <div class="stats-strip">
+      <div class="stat"><div class="n" data-count="100">0</div><div class="l">% landing rate</div></div>
+      <div class="stat"><div class="n" data-count="97">0</div><div class="l">ms p50 telemetry</div></div>
+      <div class="stat"><div class="n" data-count="14">0</div><div class="l">× tip efficiency</div></div>
+      <div class="stat"><div class="n" data-count="6">0</div><div class="l">core pipelines</div></div>
+    </div>
+  </div>
+</header>
+
+<div class="wrap">
+
+<!-- SECTION 1 -->
+<section id="context" class="reveal">
+  <div class="sec-num">Section 01 — Technical context</div>
+  <h2 class="sec-title">How Jito and writable accounts actually work.</h2>
+  <p class="sec-desc">Solana's parallel engine handles separate state paths, but execution clashes when transactions compete to write to the same account. Jito coordinates this off-chain in three steps.</p>
+
+  <div class="grid cols-3">
+    <div class="card"><div class="n">01</div><h3>Bundle account locking</h3><p>Jito's <code>BundleAccountLocker</code> extracts and locks all read/write accounts across a bundle, securing block-wide atomicity.</p></div>
+    <div class="card"><div class="n">02</div><h3>Conflict set grouping</h3><p>Bundles requesting overlapping locks — trading bots competing for the same DLMM pool — are isolated into a <code>Conflict Set</code>.</p></div>
+    <div class="card"><div class="n">03</div><h3>Localized auctions</h3><p>Only one conflicting bundle lands. Jito runs an off-chain priority auction; the top <code>Priority Score</code> wins.</p></div>
+  </div>
+
+  <div class="conflict-viz">
+    <div class="sec-num" style="margin-bottom:24px">Live · Conflict set grouping path</div>
+    <div class="conflict-lane">
+      <div class="lane-col">
+        <div class="tx-chip"><span>Tx 1 · Rebalance</span><span class="s">writes: pool</span></div>
+        <div class="tx-chip"><span>Tx 2 · Arb bot</span><span class="s">writes: pool</span></div>
+        <div class="tx-chip"><span>Tx 3 · Swapper</span><span class="s">writes: pool</span></div>
+      </div>
+      <div class="arrow">→</div>
+      <div class="bin">
+        <div class="bin-t">JITO CONFLICT SET</div>
+        <div class="bin-lock">WORLDCUP/SOL · pool lock</div>
+        <div class="bin-auction">↳ off-chain priority auction</div>
+      </div>
+      <div class="arrow">→</div>
+      <div class="block-out">✓ LANDED<br><span style="font-size:11px;color:var(--dim);font-weight:400">slot 429341336</span></div>
+    </div>
+  </div>
+
+  <div class="callout"><b>Key insight —</b> Standard RPC submission broadcasts to public mempools, exposing transactions to sandwich attacks and leader-level drops. AutoLand routes bypass this entirely via private Jito channels.</div>
+</section>
+
+<!-- SECTION 2 -->
+<section id="auction" class="reveal">
+  <div class="sec-num">Section 02 — The auction</div>
+  <h2 class="sec-title">Denominator optimization wins auctions.</h2>
+  <p class="sec-desc">Inside a Jito Conflict Set, bundles are ranked by <b style="color:var(--ink)">Priority Score</b> — tip density per compute unit — not absolute tip.</p>
+
+  <div class="formula">Priority Score = <span>Total Jito Tip (lamports)</span> ÷ <span>Compute Units Requested</span></div>
+
+  <div class="compare">
+    <div class="cmp win">
+      <h4>Tx A · AutoLand optimized</h4>
+      <div class="row"><span>Requested compute</span><b>50,000 CU</b></div>
+      <div class="row"><span>Jito tip</span><b>0.005 SOL</b></div>
+      <div class="row"><span>Priority score</span><b style="color:var(--lime)">100 lamports/CU</b></div>
+      <div class="verdict">✓ LANDED FIRST</div>
+    </div>
+    <div class="cmp lose">
+      <h4>Tx B · Default unoptimized</h4>
+      <div class="row"><span>Requested compute</span><b>1,400,000 CU</b></div>
+      <div class="row"><span>Jito tip</span><b>0.070 SOL</b></div>
+      <div class="row"><span>Priority score</span><b style="color:var(--pink)">50 lamports/CU</b></div>
+      <div class="verdict">✕ DROPPED · OUTBID</div>
+    </div>
+  </div>
+
+  <p style="color:var(--dim);margin-top:20px;font-size:14px">Tx B pays a <b style="color:var(--ink)">14× higher absolute tip</b> yet loses — because its CU denominator is bloated. AutoLand shrinks that denominator.</p>
+
+  <!-- INTERACTIVE SIMULATOR -->
+  <div class="sim">
+    <div class="sim-head">
+      <div>
+        <div class="sec-num">Interactive · Bid simulator</div>
+        <h3>Move the sliders. Watch the auction shift.</h3>
+      </div>
+      <p>Compete against a standard bot at 70M lamports / 1.4M CU (50 lamports/CU baseline).</p>
+    </div>
+    <div class="sim-grid">
+      <div>
+        <div class="slider-block">
+          <div class="hd"><span>Jito tip</span><span class="v" id="tip-val">0.005 SOL</span></div>
+          <input type="range" id="tip" min="1" max="100" step="1" value="5">
+        </div>
+        <div class="slider-block">
+          <div class="hd"><span>Compute units requested</span><span class="v" id="cu-val">50,000 CU</span></div>
+          <input type="range" id="cu" min="10" max="1400" step="5" value="50">
+        </div>
+        <div style="margin-top:24px;padding:16px;border-radius:12px;background:rgba(255,255,255,.02);border:1px solid var(--line);font-family:var(--mono);font-size:12px;color:var(--dim);line-height:1.8">
+          <div>tip:&nbsp;&nbsp;&nbsp;<span id="lam-out" style="color:var(--cyan)">5,000,000</span> lamports</div>
+          <div>cu:&nbsp;&nbsp;&nbsp;&nbsp;<span id="cu-out" style="color:var(--cyan)">50,000</span> units</div>
+          <div>bench: <span style="color:var(--mute)">50.00 lamports/CU</span></div>
+        </div>
+      </div>
+      <div>
+        <div class="gauge">
+          <svg viewBox="0 0 200 200">
+            <defs><linearGradient id="gg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#22e5ff"/><stop offset="1" stop-color="#a6ff5f"/></linearGradient></defs>
+            <circle cx="100" cy="100" r="80" class="bg-r"/>
+            <circle cx="100" cy="100" r="80" class="fg-r" id="ring" stroke-dasharray="502" stroke-dashoffset="502"/>
+          </svg>
+          <div class="num" id="score">100</div>
+          <div class="lb">LAMPORTS / CU</div>
+        </div>
+        <div class="status win" id="verdict">✓ OUTBIDS COMPETITOR</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- SECTION 3 -->
+<section id="engine" class="reveal">
+  <div class="sec-num">Section 03 — The engine</div>
+  <h2 class="sec-title">Six layers, one contention engine.</h2>
+  <p class="sec-desc">AutoLand builds an active bidding profile for target accounts. Live gRPC streams feed tip scaling; global fee percentiles hold the floor when pools are quiet.</p>
+
+  <div class="pipeline">
+    <div class="pipe-stages" id="stages">
+      <div class="stage active" data-stage="0"><div class="num">01</div><h4>Telemetry</h4><p>Yellowstone gRPC subscribes per-account.</p></div>
+      <div class="stage" data-stage="1"><div class="num">02</div><h4>Leader schedule</h4><p>Times dispatch to Jito-supported slots.</p></div>
+      <div class="stage" data-stage="2"><div class="num">03</div><h4>CU resize</h4><p>Pre-flight sim + 10% margin.</p></div>
+      <div class="stage" data-stage="3"><div class="num">04</div><h4>Dual bidding</h4><p>Outbids under contention, p50 baseline otherwise.</p></div>
+      <div class="stage" data-stage="4"><div class="num">05</div><h4>LLM advisor</h4><p>Diagnoses drops, stale hashes, retries.</p></div>
+      <div class="stage" data-stage="5"><div class="num">06</div><h4>Commitment</h4><p>Tracks processed → confirmed → finalized.</p></div>
+    </div>
+
+    <div class="split">
+      <div class="panel">
+        <div class="panel-hd"><span class="l">[CLIENT] your-bot.ts</span><span class="r">typescript</span></div>
+<pre><span class="cm">// 1. Bot detects pool imbalance</span>
+<span class="kw">const</span> pool = <span class="kw">await</span> <span class="fn">getDLMMPool</span>(POOL_ADDR);
+
+<span class="kw">if</span> (pool.priceChange &gt; threshold) {
+  <span class="cm">// 2. Build rebalance txs</span>
+  <span class="kw">const</span> txs = <span class="kw">await</span> <span class="fn">buildRebalanceTxs</span>(pool);
+
+  <span class="cm">// 3. Hand batch to AutoLand</span>
+  <span class="kw">const</span> result = <span class="kw">await</span> autoland.<span class="fn">submitBatch</span>(txs, {
+    targetPool: POOL_ADDR,
+    outbidMultiplier: <span class="st">1.15</span>
+  });
+}</pre>
+      </div>
+      <div class="panel">
+        <div class="panel-hd"><span class="l" style="color:var(--lime)">[SDK] execution pipeline</span><span class="r">telemetry</span></div>
+<pre><span class="tag-b">[gRPC]</span>       stream WORLDCUP/SOL
+<span class="tag-b">[gRPC]</span>       competitor floor: <span class="tag-a">84.5 lamports/CU</span>
+<span class="tag-b">[optim]</span>      simulated: 41,200 CU
+<span class="tag-b">[optim]</span>      envelope: <span class="tag-g">45,320 CU</span> (+10%)
+<span class="tag-p">[bid]</span>        Jito tip: 3,829,540 lamports
+<span class="tag-g">[dispatch]</span>   → regional block engines
+<span class="tag-g">[jito]</span>       ✓ landed slot 429341336
+<span class="tag-m">              attempt 1 · 100% confirmation</span></pre>
+      </div>
+    </div>
+  </div>
+
+  <!-- AUTO_LAND_OPTIONS -->
+  <div style="margin-top: 60px;">
+    <div class="sec-num">Feature · Multi-channel routing options</div>
+    <h3 style="font-family:var(--serif);font-size:28px;font-weight:600;margin-bottom:14px">AutoLand Options: Normal vs. High Urgency</h3>
+    <p style="color:var(--dim);font-size:14.5px;max-width:720px;margin-bottom:28px">
+      Developers can specify transaction urgency in AutoLand submit options. This guarantees cost-effective execution paths depending on the context:
+    </p>
+
+    <!-- SDK OPTIONS CODE SNIPPET -->
+    <div class="panel" style="margin-bottom: 32px; max-width: 720px;">
+      <div class="panel-hd"><span class="l">[SDK] autoland-urgency-options.ts</span><span class="r">typescript</span></div>
+<pre><span class="cm">// Example 1: High Urgency transaction (DLMM rebalancing, arbitrage, liquidations)</span>
+<span class="kw">const</span> highResult = <span class="kw">await</span> autoland.<span class="fn">submit</span>(rebalanceTx, {
+  urgency: <span class="st">"high"</span> <span class="cm">// Routes to the private Jito block engine stack with dynamic tip outbidding</span>
+});
+
+<span class="cm">// Example 2: Normal Urgency transaction (Standard token transfers, admin tasks, fee collections)</span>
+<span class="kw">const</span> normalResult = <span class="kw">await</span> autoland.<span class="fn">submit</span>(transferTx, {
+  urgency: <span class="st">"normal"</span> <span class="cm">// Bypasses Jito tips entirely; dispatched directly to standard public RPC nodes</span>
+});</pre>
+    </div>
+
+    <div class="compare">
+      <div class="cmp" style="border-color: rgba(34,229,255,.3); background: radial-gradient(400px 200px at 50% 0%,rgba(34,229,255,.05),transparent);">
+        <h4 style="color: var(--cyan)">Urgency: "normal"</h4>
+        <p style="color:var(--ink);font-size:14px;margin-bottom:12px;font-weight:600">Public RPC Dispatcher</p>
+        <div class="row"><span>Target Transaction Type</span><b>Simple / non-time-sensitive (e.g. transfers, approvals)</b></div>
+        <div class="row"><span>Bypasses Jito Tip</span><b>Yes (0 Jito tip paid)</b></div>
+        <div class="row"><span>Routing Channel</span><b>Public Solana Mempool (sendRawTransaction)</b></div>
+        <div class="row"><span>Confirmation Mode</span><b>Standard RPC slot tracking</b></div>
+        <div class="verdict" style="background:rgba(34,229,255,.1);color:var(--cyan)">ZERO TIP COST</div>
+      </div>
+
+      <div class="cmp" style="border-color: rgba(139,123,255,.3); background: radial-gradient(400px 200px at 50% 0%,rgba(139,123,255,.05),transparent);">
+        <h4 style="color: var(--violet)">Urgency: "high"</h4>
+        <p style="color:var(--ink);font-size:14px;margin-bottom:12px;font-weight:600">Jito Bidding Stack</p>
+        <div class="row"><span>Target Transaction Type</span><b>High-contention events (e.g. liquidations, HFTs, mints)</b></div>
+        <div class="row"><span>Bypasses Jito Tip</span><b>No (dynamic bidding via telemetry)</b></div>
+        <div class="row"><span>Routing Channel</span><b>Private block engine channels (Jito Bundles)</b></div>
+        <div class="row"><span>Confirmation Mode</span><b>Sub-100ms Yellowstone gRPC streams</b></div>
+        <div class="verdict" style="background:rgba(139,123,255,.1);color:var(--violet)">MAX LANDING PROBABILITY</div>
+      </div>
+    </div>
+    
+    <div class="callout" style="border-left-color: var(--violet); background: linear-gradient(90deg,rgba(139,123,255,.06),transparent);">
+      <b>Why this dual routing is critical:</b> Liquidations, IDOs, and DLMM pool rebalances must land in a specific slot or they expire/get frontrun. Normal transactions (like transferring fees out of the bot or executing standard administrative commands) do not require microsecond-level speed. Forcing simple actions through the private Jito bundle stack would unnecessarily waste Jito tips, while sending high-contention actions to the public mempool would result in transaction drops and MEV exploitation.
+    </div>
+  </div>
+</section>
+
+<!-- SECTION 4 - CONSOLE -->
+<section id="console" class="reveal">
+  <div class="sec-num">Section 04 — Live console</div>
+  <h2 class="sec-title">Bundles landed on mainnet.</h2>
+  <p class="sec-desc">Real submissions, hashes verifiable on-chain. Each bundle is dispatched, tracked, and reconciled against Jito leader windows.</p>
+
+  <div class="console">
+    <div class="console-head">
+      <span class="dot-r r"></span><span class="dot-r y"></span><span class="dot-r g"></span>
+      <span class="t">autoland@mainnet · ~/logs · stream</span>
+    </div>
+    <div class="console-body">
+      <div class="log-line"><span class="tag-m">10:52:14</span> <span class="tag-b">[gRPC]</span> subscribed · WORLDCUP/SOL · depth 4</div>
+      <div class="log-line"><span class="tag-m">10:52:14</span> <span class="tag-p">[leader]</span> next Jito window · slot 429341333 · +1.2s</div>
+      <div class="log-line"><span class="tag-m">10:52:15</span> <span class="tag-b">[optim]</span> sim 41,200 CU → envelope <span class="tag-g">45,320 CU</span></div>
+      <div class="log-line"><span class="tag-m">10:52:15</span> <span class="tag-p">[bid]</span> floor 84.5 lam/CU · outbid → 97.2 lam/CU</div>
+      <div class="log-line"><span class="tag-m">10:52:15</span> <span class="tag-a">[dispatch]</span> bundle → ams · fra · nyc · tokyo</div>
+      <div class="log-line"><span class="tag-m">10:52:16</span> <span class="tag-g">[jito]</span> ✓ landed · slot 429341336 · attempt 1</div>
+      <div class="log-line"><span class="tag-m">10:52:16</span> <span class="tag-g">[confirm]</span> processed 412ms · confirmed 798ms</div>
+      <div class="log-line"><span class="tag-m">10:52:16</span> <span class="tag-b">[gRPC]</span> awaiting next contention window<span class="cursor"></span></div>
+    </div>
+  </div>
+
+  <h3 style="font-family:var(--serif);font-size:26px;font-weight:600;margin:60px 0 24px">Recent landed bundles</h3>
+
+  <!-- Live Console Filters -->
+  <div class="filter-bar">
+    <button class="filter-btn active" id="btn-all" onclick="filterLogs('all')">All Submissions (10)</button>
+    <button class="filter-btn" id="btn-landed" onclick="filterLogs('landed')">Landed Instantly (6)</button>
+    <button class="filter-btn" id="btn-recovered" onclick="filterLogs('recovered')">AI Recovered (3)</button>
+    <button class="filter-btn" id="btn-fallback" onclick="filterLogs('fallback')">RPC Fallback (1)</button>
+  </div>
+
+  <div class="execution-logs-list">
+    <!-- Entry 01 -->
+    <div class="trace-card" data-status="landed">
+      <div class="trace-hdr">
+        <div class="trace-title">
+          <span style="color: var(--cyan); font-family: var(--mono); font-size: 11px; font-weight: bold;">[ENTRY 01]</span>
+          <h3>Bundle 82de89b4b61c088ce08137818628d924d088f6e9dc09be457fc6c408449fefc4</h3>
+        </div>
+        <div class="trace-meta">
+          <span class="trace-badge success">Finalized</span>
+        </div>
+      </div>
+      <div class="trace-timeline">
+        <div class="timeline-node"><span class="timeline-label">Sub</span> <span class="timeline-val">429341336</span></div>
+        <div class="timeline-arrow">➔</div>
+        <div class="timeline-node"><span class="timeline-label">Proc</span> <span class="timeline-val">429341349</span></div>
+        <div class="timeline-arrow">➔</div>
+        <div class="timeline-node"><span class="timeline-label">Conf</span> <span class="timeline-val">429341349</span></div>
+        <div class="timeline-arrow">➔</div>
+        <div class="timeline-node"><span class="timeline-label">Final</span> <span class="timeline-val">429341349</span></div>
+      </div>
+      <div class="trace-metrics-grid">
+        <div class="metric-item"><span class="metric-lbl">Tip Paid</span><span class="metric-val">6,851,610 lamports</span></div>
+        <div class="metric-item"><span class="metric-lbl">Attempt</span><span class="metric-val">1</span></div>
+        <div class="metric-item"><span class="metric-lbl">Operation</span><span class="metric-val">Meteora Remove Liquidity & Other & Meteora Add Liquidity</span></div>
+        <div class="metric-item"><span class="metric-lbl">Confirmation</span><span class="metric-val">Jito Stream</span></div>
+      </div>
+      <div style="margin-top: 14px; border-top: 1px dashed var(--line); padding-top: 12px;">
+        <span class="metric-lbl" style="display: block; margin-bottom: 6px;">Signatures & Explorer Links</span>
+        <div style="display: flex; flex-direction: column; gap: 6px;">
+          <div style="display: flex; justify-content: space-between; align-items: center; background-color: var(--bg); padding: 6px 12px; border-radius: 4px; border: 1px solid var(--line);">
+            <code style="font-family: var(--mono); font-size: 10.5px; color: var(--dim); word-break: break-all;">3s48PtttU1wuBu3msbq8WABBDsViEcAiCypswfH8nLcd3NiJ9eosSbNm7AxbAEiooKqPKB1T4BQHizkZ2VBHnbsZ</code>
+            <a href="https://solscan.io/tx/3s48PtttU1wuBu3msbq8WABBDsViEcAiCypswfH8nLcd3NiJ9eosSbNm7AxbAEiooKqPKB1T4BQHizkZ2VBHnbsZ" target="_blank" style="font-family: var(--mono); font-size: 10px; color: var(--cyan); text-decoration: none; margin-left: 12px; white-space: nowrap;">Solscan ↗</a>
+          </div>
+          <div style="display: flex; justify-content: space-between; align-items: center; background-color: var(--bg); padding: 6px 12px; border-radius: 4px; border: 1px solid var(--line);">
+            <code style="font-family: var(--mono); font-size: 10.5px; color: var(--dim); word-break: break-all;">4NKTCrZeXNc3zAWn8s1f7LaxPDkgbiAWuto9QiiqYwyK4i7oBfsLjsvSADxbCmHsPskdvPJL4LBDjkyKUp7m3jmY</code>
+            <a href="https://solscan.io/tx/4NKTCrZeXNc3zAWn8s1f7LaxPDkgbiAWuto9QiiqYwyK4i7oBfsLjsvSADxbCmHsPskdvPJL4LBDjkyKUp7m3jmY" target="_blank" style="font-family: var(--mono); font-size: 10px; color: var(--cyan); text-decoration: none; margin-left: 12px; white-space: nowrap;">Solscan ↗</a>
+          </div>
+          <div style="display: flex; justify-content: space-between; align-items: center; background-color: var(--bg); padding: 6px 12px; border-radius: 4px; border: 1px solid var(--line);">
+            <code style="font-family: var(--mono); font-size: 10.5px; color: var(--dim); word-break: break-all;">4pa2FYcgAcM4pQTGtAYFgpksN86U5LEJvoSrKs2BrNKui6vL7ik5ae3oue952EHm7Zx95KrMx2wtBZNpJGbLra5e</code>
+            <a href="https://solscan.io/tx/4pa2FYcgAcM4pQTGtAYFgpksN86U5LEJvoSrKs2BrNKui6vL7ik5ae3oue952EHm7Zx95KrMx2wtBZNpJGbLra5e" target="_blank" style="font-family: var(--mono); font-size: 10px; color: var(--cyan); text-decoration: none; margin-left: 12px; white-space: nowrap;">Solscan ↗</a>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Entry 02 -->
+    <div class="trace-card" data-status="recovered">
+      <div class="trace-hdr">
+        <div class="trace-title">
+          <span style="color: var(--amber); font-family: var(--mono); font-size: 11px; font-weight: bold;">[ENTRY 02]</span>
+          <h3>Bundle 4858d2377ff9b7b621307c6ab0ab35e475dbbf81af3fd68237a42d19949a22ef</h3>
+        </div>
+        <div class="trace-meta">
+          <span class="trace-badge recovered">AI Recovered</span>
+        </div>
+      </div>
+      <div class="trace-timeline">
+        <div class="timeline-node"><span class="timeline-label">Sub</span> <span class="timeline-val">429331685</span></div>
+        <div class="timeline-arrow">➔</div>
+        <div class="timeline-node"><span class="timeline-label">Proc</span> <span class="timeline-val">429331836</span></div>
+        <div class="timeline-arrow">➔</div>
+        <div class="timeline-node"><span class="timeline-label">Conf</span> <span class="timeline-val">429331836</span></div>
+        <div class="timeline-arrow">➔</div>
+        <div class="timeline-node"><span class="timeline-label">Final</span> <span class="timeline-val">429331836</span></div>
+      </div>
+      <div class="trace-metrics-grid">
+        <div class="metric-item"><span class="metric-lbl">Tip Paid</span><span class="metric-val">15,000 lamports</span></div>
+        <div class="metric-item"><span class="metric-lbl">Attempt</span><span class="metric-val">3 (AI Retried)</span></div>
+        <div class="metric-item"><span class="metric-lbl">Operation</span><span class="metric-val">Meteora Remove Liquidity</span></div>
+        <div class="metric-item"><span class="metric-lbl">Confirmation</span><span class="metric-val">Jito Stream</span></div>
+      </div>
+      <div class="recovery-callout">
+        <strong>AI Diagnostics & Action:</strong> Attempt 1 failed due to <code>TIMEOUT</code> (Blockhash expired or Jito fee war). The AI Advisor recovered by refreshing blockhash parameters and outbidding competitors to finalize successfully.
+      </div>
+      <div style="margin-top: 14px; border-top: 1px dashed var(--line); padding-top: 12px;">
+        <span class="metric-lbl" style="display: block; margin-bottom: 6px;">Signatures & Explorer Links</span>
+        <div style="display: flex; flex-direction: column; gap: 6px;">
+          <div style="display: flex; justify-content: space-between; align-items: center; background-color: var(--bg); padding: 6px 12px; border-radius: 4px; border: 1px solid var(--line);">
+            <code style="font-family: var(--mono); font-size: 10.5px; color: var(--dim); word-break: break-all;">5tNGQ1tzy3BTwx7rG3qyXQeK5a5jDqMuDXTRS4cYktUzWiXMYGcSAaNmPxwqJdDTvviLWk678sXryGvphphAPqxC</code>
+            <a href="https://solscan.io/tx/5tNGQ1tzy3BTwx7rG3qyXQeK5a5jDqMuDXTRS4cYktUzWiXMYGcSAaNmPxwqJdDTvviLWk678sXryGvphphAPqxC" target="_blank" style="font-family: var(--mono); font-size: 10px; color: var(--cyan); text-decoration: none; margin-left: 12px; white-space: nowrap;">Solscan ↗</a>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Entry 03 -->
+    <div class="trace-card" data-status="landed">
+      <div class="trace-hdr">
+        <div class="trace-title">
+          <span style="color: var(--cyan); font-family: var(--mono); font-size: 11px; font-weight: bold;">[ENTRY 03]</span>
+          <h3>Bundle 96b8c42cfc5105edb8abad9a923f5c620e368a2c67daac5c0f1376c9c8337146</h3>
+        </div>
+        <div class="trace-meta">
+          <span class="trace-badge success">Finalized</span>
+        </div>
+      </div>
+      <div class="trace-timeline">
+        <div class="timeline-node"><span class="timeline-label">Sub</span> <span class="timeline-val">429055156</span></div>
+        <div class="timeline-arrow">➔</div>
+        <div class="timeline-node"><span class="timeline-label">Proc</span> <span class="timeline-val">429055162</span></div>
+        <div class="timeline-arrow">➔</div>
+        <div class="timeline-node"><span class="timeline-label">Conf</span> <span class="timeline-val">429055162</span></div>
+        <div class="timeline-arrow">➔</div>
+        <div class="timeline-node"><span class="timeline-label">Final</span> <span class="timeline-val">429055162</span></div>
+      </div>
+      <div class="trace-metrics-grid">
+        <div class="metric-item"><span class="metric-lbl">Tip Paid</span><span class="metric-val">11,588,776 lamports</span></div>
+        <div class="metric-item"><span class="metric-lbl">Attempt</span><span class="metric-val">1</span></div>
+        <div class="metric-item"><span class="metric-lbl">Operation</span><span class="metric-val">Meteora Remove Liquidity & Other & Meteora Add Liquidity</span></div>
+        <div class="metric-item"><span class="metric-lbl">Confirmation</span><span class="metric-val">Jito Stream</span></div>
+      </div>
+      <div style="margin-top: 14px; border-top: 1px dashed var(--line); padding-top: 12px;">
+        <span class="metric-lbl" style="display: block; margin-bottom: 6px;">Signatures & Explorer Links</span>
+        <div style="display: flex; flex-direction: column; gap: 6px;">
+          <div style="display: flex; justify-content: space-between; align-items: center; background-color: var(--bg); padding: 6px 12px; border-radius: 4px; border: 1px solid var(--line);">
+            <code style="font-family: var(--mono); font-size: 10.5px; color: var(--dim); word-break: break-all;">2FLUzdtGxE7EVcgDHAWtsn2ziTu6EYTNg6p2hEKZbqacog39uBd1xTRrLivepGdRe1BnBCwgzCksQYFtPVR6mHCY</code>
+            <a href="https://solscan.io/tx/2FLUzdtGxE7EVcgDHAWtsn2ziTu6EYTNg6p2hEKZbqacog39uBd1xTRrLivepGdRe1BnBCwgzCksQYFtPVR6mHCY" target="_blank" style="font-family: var(--mono); font-size: 10px; color: var(--cyan); text-decoration: none; margin-left: 12px; white-space: nowrap;">Solscan ↗</a>
+          </div>
+          <div style="display: flex; justify-content: space-between; align-items: center; background-color: var(--bg); padding: 6px 12px; border-radius: 4px; border: 1px solid var(--line);">
+            <code style="font-family: var(--mono); font-size: 10.5px; color: var(--dim); word-break: break-all;">54r4SoHmybzaqzAjbHkKq8tLQSXrnJeQLBsQPbtErZmptJH6NLkrgaseksjvvejQEJrqJaBiq7rnKEtecyESFPCP</code>
+            <a href="https://solscan.io/tx/54r4SoHmybzaqzAjbHkKq8tLQSXrnJeQLBsQPbtErZmptJH6NLkrgaseksjvvejQEJrqJaBiq7rnKEtecyESFPCP" target="_blank" style="font-family: var(--mono); font-size: 10px; color: var(--cyan); text-decoration: none; margin-left: 12px; white-space: nowrap;">Solscan ↗</a>
+          </div>
+          <div style="display: flex; justify-content: space-between; align-items: center; background-color: var(--bg); padding: 6px 12px; border-radius: 4px; border: 1px solid var(--line);">
+            <code style="font-family: var(--mono); font-size: 10.5px; color: var(--dim); word-break: break-all;">5tte7g5hmrXnPSVJTxVo6aMa68cap1SdPgJddJ4d3BGJUnno8xMzKisANiBaL7eMeZKTPJoA4sGEMvrZoGyHP8kS</code>
+            <a href="https://solscan.io/tx/5tte7g5hmrXnPSVJTxVo6aMa68cap1SdPgJddJ4d3BGJUnno8xMzKisANiBaL7eMeZKTPJoA4sGEMvrZoGyHP8kS" target="_blank" style="font-family: var(--mono); font-size: 10px; color: var(--cyan); text-decoration: none; margin-left: 12px; white-space: nowrap;">Solscan ↗</a>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Entry 04 -->
+    <div class="trace-card" data-status="recovered">
+      <div class="trace-hdr">
+        <div class="trace-title">
+          <span style="color: var(--amber); font-family: var(--mono); font-size: 11px; font-weight: bold;">[ENTRY 04]</span>
+          <h3>Bundle 88759dd83e9a2ef46c607fe04e9e9f0f030ccf5f05600b75ea9bd8725a1c2b04</h3>
+        </div>
+        <div class="trace-meta">
+          <span class="trace-badge recovered">AI Recovered</span>
+        </div>
+      </div>
+      <div class="trace-timeline">
+        <div class="timeline-node"><span class="timeline-label">Sub</span> <span class="timeline-val">429055014</span></div>
+        <div class="timeline-arrow">➔</div>
+        <div class="timeline-node"><span class="timeline-label">Proc</span> <span class="timeline-val">429055015</span></div>
+        <div class="timeline-arrow">➔</div>
+        <div class="timeline-node"><span class="timeline-label">Conf</span> <span class="timeline-val">429055015</span></div>
+        <div class="timeline-arrow">➔</div>
+        <div class="timeline-node"><span class="timeline-label">Final</span> <span class="timeline-val">429055015</span></div>
+      </div>
+      <div class="trace-metrics-grid">
+        <div class="metric-item"><span class="metric-lbl">Tip Paid</span><span class="metric-val">15,000 lamports</span></div>
+        <div class="metric-item"><span class="metric-lbl">Attempt</span><span class="metric-val">3 (AI Retried)</span></div>
+        <div class="metric-item"><span class="metric-lbl">Operation</span><span class="metric-val">Meteora Remove Liquidity & Meteora Add Liquidity</span></div>
+        <div class="metric-item"><span class="metric-lbl">Confirmation</span><span class="metric-val">Jito Connection</span></div>
+      </div>
+      <div class="recovery-callout">
+        <strong>AI Diagnostics & Action:</strong> Attempt 1 failed due to <code>bundle_dropped</code> (fallback RPC initiated — Forced public RPC fallback guardrail triggered after attempt 3). The AI Advisor recovered by refreshing blockhash parameters and outbidding competitors to finalize successfully.
+      </div>
+      <div style="margin-top: 14px; border-top: 1px dashed var(--line); padding-top: 12px;">
+        <span class="metric-lbl" style="display: block; margin-bottom: 6px;">Signatures & Explorer Links</span>
+        <div style="display: flex; flex-direction: column; gap: 6px;">
+          <div style="display: flex; justify-content: space-between; align-items: center; background-color: var(--bg); padding: 6px 12px; border-radius: 4px; border: 1px solid var(--line);">
+            <code style="font-family: var(--mono); font-size: 10.5px; color: var(--dim); word-break: break-all;">3LenJ49MV9BWfooPPFyGGqiQWvfveAuJz419vpq9TLnnaGSJ3p5jqnUvFhtU6KVihaDi9Ab3s5atqZKugj85zaDj</code>
+            <a href="https://solscan.io/tx/3LenJ49MV9BWfooPPFyGGqiQWvfveAuJz419vpq9TLnnaGSJ3p5jqnUvFhtU6KVihaDi9Ab3s5atqZKugj85zaDj" target="_blank" style="font-family: var(--mono); font-size: 10px; color: var(--cyan); text-decoration: none; margin-left: 12px; white-space: nowrap;">Solscan ↗</a>
+          </div>
+          <div style="display: flex; justify-content: space-between; align-items: center; background-color: var(--bg); padding: 6px 12px; border-radius: 4px; border: 1px solid var(--line);">
+            <code style="font-family: var(--mono); font-size: 10.5px; color: var(--dim); word-break: break-all;">5VtctK5QfNMGS5Qf4ncPRpBv97hyVRjBMzruSfFK3FAacxkjcxEnEGD53RgYWF6KAUQfJ5itNKZzXrvTJ9J7XEzL</code>
+            <a href="https://solscan.io/tx/5VtctK5QfNMGS5Qf4ncPRpBv97hyVRjBMzruSfFK3FAacxkjcxEnEGD53RgYWF6KAUQfJ5itNKZzXrvTJ9J7XEzL" target="_blank" style="font-family: var(--mono); font-size: 10px; color: var(--cyan); text-decoration: none; margin-left: 12px; white-space: nowrap;">Solscan ↗</a>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Entry 05 -->
+    <div class="trace-card" data-status="recovered">
+      <div class="trace-hdr">
+        <div class="trace-title">
+          <span style="color: var(--amber); font-family: var(--mono); font-size: 11px; font-weight: bold;">[ENTRY 05]</span>
+          <h3>Bundle 143efc2f1d80bdf5d108fce815b53e836d3ca19644270ff2da089f72d3a968cb</h3>
+        </div>
+        <div class="trace-meta">
+          <span class="trace-badge recovered">AI Recovered</span>
+        </div>
+      </div>
+      <div class="trace-timeline">
+        <div class="timeline-node"><span class="timeline-label">Sub</span> <span class="timeline-val">429045955</span></div>
+        <div class="timeline-arrow">➔</div>
+        <div class="timeline-node"><span class="timeline-label">Proc</span> <span class="timeline-val">429045964</span></div>
+        <div class="timeline-arrow">➔</div>
+        <div class="timeline-node"><span class="timeline-label">Conf</span> <span class="timeline-val">429045964</span></div>
+        <div class="timeline-arrow">➔</div>
+        <div class="timeline-node"><span class="timeline-label">Final</span> <span class="timeline-val">429045964</span></div>
+      </div>
+      <div class="trace-metrics-grid">
+        <div class="metric-item"><span class="metric-lbl">Tip Paid</span><span class="metric-val">15,000,000 lamports</span></div>
+        <div class="metric-item"><span class="metric-lbl">Attempt</span><span class="metric-val">5 (AI Retried)</span></div>
+        <div class="metric-item"><span class="metric-lbl">Operation</span><span class="metric-val">Meteora Remove Liquidity & Other & Meteora Add Liquidity</span></div>
+        <div class="metric-item"><span class="metric-lbl">Confirmation</span><span class="metric-val">Jito Stream</span></div>
+      </div>
+      <div class="recovery-callout">
+        <strong>AI Diagnostics & Action:</strong> Attempt 1 failed due to <code>TIMEOUT</code> (Blockhash expired or Jito fee war). The AI Advisor recovered by refreshing blockhash parameters and outbidding competitors to finalize successfully.
+      </div>
+      <div style="margin-top: 14px; border-top: 1px dashed var(--line); padding-top: 12px;">
+        <span class="metric-lbl" style="display: block; margin-bottom: 6px;">Signatures & Explorer Links</span>
+        <div style="display: flex; flex-direction: column; gap: 6px;">
+          <div style="display: flex; justify-content: space-between; align-items: center; background-color: var(--bg); padding: 6px 12px; border-radius: 4px; border: 1px solid var(--line);">
+            <code style="font-family: var(--mono); font-size: 10.5px; color: var(--dim); word-break: break-all;">4NuJjjK3wMbDN2zmUabSdi7d6cCPkKgH2KYbitFKdsQ9Wh9AqZTjCT7dUmjeDvJVkVtx6SDbNNegRnKHZnCz311G</code>
+            <a href="https://solscan.io/tx/4NuJjjK3wMbDN2zmUabSdi7d6cCPkKgH2KYbitFKdsQ9Wh9AqZTjCT7dUmjeDvJVkVtx6SDbNNegRnKHZnCz311G" target="_blank" style="font-family: var(--mono); font-size: 10px; color: var(--cyan); text-decoration: none; margin-left: 12px; white-space: nowrap;">Solscan ↗</a>
+          </div>
+          <div style="display: flex; justify-content: space-between; align-items: center; background-color: var(--bg); padding: 6px 12px; border-radius: 4px; border: 1px solid var(--line);">
+            <code style="font-family: var(--mono); font-size: 10.5px; color: var(--dim); word-break: break-all;">4p1YkwxPcQtpkEy9eNZ8mRonBrDhbKDEm3hw2NGAeZu5Gb25MtJtXe36A2Cak23kFq98b1U9UQZYMLaF4WWsM3f4</code>
+            <a href="https://solscan.io/tx/4p1YkwxPcQtpkEy9eNZ8mRonBrDhbKDEm3hw2NGAeZu5Gb25MtJtXe36A2Cak23kFq98b1U9UQZYMLaF4WWsM3f4" target="_blank" style="font-family: var(--mono); font-size: 10px; color: var(--cyan); text-decoration: none; margin-left: 12px; white-space: nowrap;">Solscan ↗</a>
+          </div>
+          <div style="display: flex; justify-content: space-between; align-items: center; background-color: var(--bg); padding: 6px 12px; border-radius: 4px; border: 1px solid var(--line);">
+            <code style="font-family: var(--mono); font-size: 10.5px; color: var(--dim); word-break: break-all;">5zjwZtKxxTXriqxvPLpqL18N5p6GFDPdKbHCkZtidnKjhnyHjMDNF7Yw3HZQfRdL8ykYFnR4zAvzAqd3WEbgPFUM</code>
+            <a href="https://solscan.io/tx/5zjwZtKxxTXriqxvPLpqL18N5p6GFDPdKbHCkZtidnKjhnyHjMDNF7Yw3HZQfRdL8ykYFnR4zAvzAqd3WEbgPFUM" target="_blank" style="font-family: var(--mono); font-size: 10px; color: var(--cyan); text-decoration: none; margin-left: 12px; white-space: nowrap;">Solscan ↗</a>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Entry 06 -->
+    <div class="trace-card" data-status="landed">
+      <div class="trace-hdr">
+        <div class="trace-title">
+          <span style="color: var(--cyan); font-family: var(--mono); font-size: 11px; font-weight: bold;">[ENTRY 06]</span>
+          <h3>Bundle 308f6e9629d13bb7265c7b303694d624eb2d0a3aa159949de2f938946a3c5082</h3>
+        </div>
+        <div class="trace-meta">
+          <span class="trace-badge success">Finalized</span>
+        </div>
+      </div>
+      <div class="trace-timeline">
+        <div class="timeline-node"><span class="timeline-label">Sub</span> <span class="timeline-val">428635810</span></div>
+        <div class="timeline-arrow">➔</div>
+        <div class="timeline-node"><span class="timeline-label">Proc</span> <span class="timeline-val">428635813</span></div>
+        <div class="timeline-arrow">➔</div>
+        <div class="timeline-node"><span class="timeline-label">Conf</span> <span class="timeline-val">428635813</span></div>
+        <div class="timeline-arrow">➔</div>
+        <div class="timeline-node"><span class="timeline-label">Final</span> <span class="timeline-val">428635813</span></div>
+      </div>
+      <div class="trace-metrics-grid">
+        <div class="metric-item"><span class="metric-lbl">Tip Paid</span><span class="metric-val">10,375,682 lamports</span></div>
+        <div class="metric-item"><span class="metric-lbl">Attempt</span><span class="metric-val">1</span></div>
+        <div class="metric-item"><span class="metric-lbl">Operation</span><span class="metric-val">Meteora Remove Liquidity & Other & Meteora Add Liquidity</span></div>
+        <div class="metric-item"><span class="metric-lbl">Confirmation</span><span class="metric-val">Jito Stream</span></div>
+      </div>
+      <div style="margin-top: 14px; border-top: 1px dashed var(--line); padding-top: 12px;">
+        <span class="metric-lbl" style="display: block; margin-bottom: 6px;">Signatures & Explorer Links</span>
+        <div style="display: flex; flex-direction: column; gap: 6px;">
+          <div style="display: flex; justify-content: space-between; align-items: center; background-color: var(--bg); padding: 6px 12px; border-radius: 4px; border: 1px solid var(--line);">
+            <code style="font-family: var(--mono); font-size: 10.5px; color: var(--dim); word-break: break-all;">279GEZTKT4crCNPj4FzjNNYwQzZXPpvREEiBN8vmfEMFK2osd7YQqLosv1kbscSizRjgFLh4Zo5Ad12vH7oSQ2x9</code>
+            <a href="https://solscan.io/tx/279GEZTKT4crCNPj4FzjNNYwQzZXPpvREEiBN8vmfEMFK2osd7YQqLosv1kbscSizRjgFLh4Zo5Ad12vH7oSQ2x9" target="_blank" style="font-family: var(--mono); font-size: 10px; color: var(--cyan); text-decoration: none; margin-left: 12px; white-space: nowrap;">Solscan ↗</a>
+          </div>
+          <div style="display: flex; justify-content: space-between; align-items: center; background-color: var(--bg); padding: 6px 12px; border-radius: 4px; border: 1px solid var(--line);">
+            <code style="font-family: var(--mono); font-size: 10.5px; color: var(--dim); word-break: break-all;">2ZRTL6ZtqeQG6sD2tW8dH42NB35bjDFtn12GrpfkBcHSsco2Yx8TZDhJax4f2gWaUFVXESDqrXSYJMJrjH3VVtRG</code>
+            <a href="https://solscan.io/tx/2ZRTL6ZtqeQG6sD2tW8dH42NB35bjDFtn12GrpfkBcHSsco2Yx8TZDhJax4f2gWaUFVXESDqrXSYJMJrjH3VVtRG" target="_blank" style="font-family: var(--mono); font-size: 10px; color: var(--cyan); text-decoration: none; margin-left: 12px; white-space: nowrap;">Solscan ↗</a>
+          </div>
+          <div style="display: flex; justify-content: space-between; align-items: center; background-color: var(--bg); padding: 6px 12px; border-radius: 4px; border: 1px solid var(--line);">
+            <code style="font-family: var(--mono); font-size: 10.5px; color: var(--dim); word-break: break-all;">sa51npZvQfpwvQwF8Q8MeShKnXa6E9DZ1F4ogUJQ6norUhXNBz26tfqzU4gH8X6djQWNH1hwEueWEfe5AmmL55X</code>
+            <a href="https://solscan.io/tx/sa51npZvQfpwvQwF8Q8MeShKnXa6E9DZ1F4ogUJQ6norUhXNBz26tfqzU4gH8X6djQWNH1hwEueWEfe5AmmL55X" target="_blank" style="font-family: var(--mono); font-size: 10px; color: var(--cyan); text-decoration: none; margin-left: 12px; white-space: nowrap;">Solscan ↗</a>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Entry 07 -->
+    <div class="trace-card" data-status="landed">
+      <div class="trace-hdr">
+        <div class="trace-title">
+          <span style="color: var(--cyan); font-family: var(--mono); font-size: 11px; font-weight: bold;">[ENTRY 07]</span>
+          <h3>Bundle 1c8d08b725913a93076c2f8b73984e052bbca48568cbe2ba9683d38fc81d2ad8</h3>
+        </div>
+        <div class="trace-meta">
+          <span class="trace-badge success">Finalized</span>
+        </div>
+      </div>
+      <div class="trace-timeline">
+        <div class="timeline-node"><span class="timeline-label">Sub</span> <span class="timeline-val">428635758</span></div>
+        <div class="timeline-arrow">➔</div>
+        <div class="timeline-node"><span class="timeline-label">Proc</span> <span class="timeline-val">428635766</span></div>
+        <div class="timeline-arrow">➔</div>
+        <div class="timeline-node"><span class="timeline-label">Conf</span> <span class="timeline-val">428635766</span></div>
+        <div class="timeline-arrow">➔</div>
+        <div class="timeline-node"><span class="timeline-label">Final</span> <span class="timeline-val">428635766</span></div>
+      </div>
+      <div class="trace-metrics-grid">
+        <div class="metric-item"><span class="metric-lbl">Tip Paid</span><span class="metric-val">10,417,111 lamports</span></div>
+        <div class="metric-item"><span class="metric-lbl">Attempt</span><span class="metric-val">1</span></div>
+        <div class="metric-item"><span class="metric-lbl">Operation</span><span class="metric-val">Meteora Remove Liquidity & Other & Meteora Add Liquidity</span></div>
+        <div class="metric-item"><span class="metric-lbl">Confirmation</span><span class="metric-val">Jito Stream</span></div>
+      </div>
+      <div style="margin-top: 14px; border-top: 1px dashed var(--line); padding-top: 12px;">
+        <span class="metric-lbl" style="display: block; margin-bottom: 6px;">Signatures & Explorer Links</span>
+        <div style="display: flex; flex-direction: column; gap: 6px;">
+          <div style="display: flex; justify-content: space-between; align-items: center; background-color: var(--bg); padding: 6px 12px; border-radius: 4px; border: 1px solid var(--line);">
+            <code style="font-family: var(--mono); font-size: 10.5px; color: var(--dim); word-break: break-all;">3wcVJPRR3sty4m8ZqbvaJ1SEh6HLUyPGYmjdeZ8v5mA2NjHAoJfSYN7kVD8piYn3nXPFvrskjX9nWkZxV5D1Nshk</code>
+            <a href="https://solscan.io/tx/3wcVJPRR3sty4m8ZqbvaJ1SEh6HLUyPGYmjdeZ8v5mA2NjHAoJfSYN7kVD8piYn3nXPFvrskjX9nWkZxV5D1Nshk" target="_blank" style="font-family: var(--mono); font-size: 10px; color: var(--cyan); text-decoration: none; margin-left: 12px; white-space: nowrap;">Solscan ↗</a>
+          </div>
+          <div style="display: flex; justify-content: space-between; align-items: center; background-color: var(--bg); padding: 6px 12px; border-radius: 4px; border: 1px solid var(--line);">
+            <code style="font-family: var(--mono); font-size: 10.5px; color: var(--dim); word-break: break-all;">4Zeax1DQVYQnumee23rWppV1PxQ2WUjceHExZzUwYqcaeLNDiz93ZDnAX4UYf1B9DwPuw27NTGW7v7BQcAiCbv1u</code>
+            <a href="https://solscan.io/tx/4Zeax1DQVYQnumee23rWppV1PxQ2WUjceHExZzUwYqcaeLNDiz93ZDnAX4UYf1B9DwPuw27NTGW7v7BQcAiCbv1u" target="_blank" style="font-family: var(--mono); font-size: 10px; color: var(--cyan); text-decoration: none; margin-left: 12px; white-space: nowrap;">Solscan ↗</a>
+          </div>
+          <div style="display: flex; justify-content: space-between; align-items: center; background-color: var(--bg); padding: 6px 12px; border-radius: 4px; border: 1px solid var(--line);">
+            <code style="font-family: var(--mono); font-size: 10.5px; color: var(--dim); word-break: break-all;">UWKJ6T2mHukPpPR9cW3hzubtYGdTgjWFqHoXSQYe9NcuCGByS4rw718NWxj8JdYJ3fHLfAPvgkfDctaQNzgzi7u</code>
+            <a href="https://solscan.io/tx/UWKJ6T2mHukPpPR9cW3hzubtYGdTgjWFqHoXSQYe9NcuCGByS4rw718NWxj8JdYJ3fHLfAPvgkfDctaQNzgzi7u" target="_blank" style="font-family: var(--mono); font-size: 10px; color: var(--cyan); text-decoration: none; margin-left: 12px; white-space: nowrap;">Solscan ↗</a>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Entry 08 -->
+    <div class="trace-card" data-status="fallback">
+      <div class="trace-hdr">
+        <div class="trace-title">
+          <span style="color: var(--cyan); font-family: var(--mono); font-size: 11px; font-weight: bold;">[ENTRY 08]</span>
+          <h3>Bundle 5f35b7cd873816221f672eecd6cfe691edab7b9c5e35216a59edb6afd2553ae0</h3>
+        </div>
+        <div class="trace-meta">
+          <span class="trace-badge success">Finalized</span>
+        </div>
+      </div>
+      <div class="trace-timeline">
+        <div class="timeline-node"><span class="timeline-label">Sub</span> <span class="timeline-val">428632708</span></div>
+        <div class="timeline-arrow">➔</div>
+        <div class="timeline-node"><span class="timeline-label">Proc</span> <span class="timeline-val">428632712</span></div>
+        <div class="timeline-arrow">➔</div>
+        <div class="timeline-node"><span class="timeline-label">Conf</span> <span class="timeline-val">428632712</span></div>
+        <div class="timeline-arrow">➔</div>
+        <div class="timeline-node"><span class="timeline-label">Final</span> <span class="timeline-val">428632712</span></div>
+      </div>
+      <div class="trace-metrics-grid">
+        <div class="metric-item"><span class="metric-lbl">Tip Paid</span><span class="metric-val">10,963,089 lamports</span></div>
+        <div class="metric-item"><span class="metric-lbl">Attempt</span><span class="metric-val">1</span></div>
+        <div class="metric-item"><span class="metric-lbl">Operation</span><span class="metric-val">Meteora Remove Liquidity & Other & Meteora Add Liquidity</span></div>
+        <div class="metric-item"><span class="metric-lbl">Confirmation</span><span class="metric-val">Public RPC Fallback</span></div>
+      </div>
+      <div style="margin-top: 14px; border-top: 1px dashed var(--line); padding-top: 12px;">
+        <span class="metric-lbl" style="display: block; margin-bottom: 6px;">Signatures & Explorer Links</span>
+        <div style="display: flex; flex-direction: column; gap: 6px;">
+          <div style="display: flex; justify-content: space-between; align-items: center; background-color: var(--bg); padding: 6px 12px; border-radius: 4px; border: 1px solid var(--line);">
+            <code style="font-family: var(--mono); font-size: 10.5px; color: var(--dim); word-break: break-all;">2Z59PQ5UxuuzeyQjHQ3yTYAogxGzi6nidQjXv5sUtFiGYJPcZGReP3tEL7D6yoY3ZRqxqR71shzey2BnEoKaeJq</code>
+            <a href="https://solscan.io/tx/2Z59PQ5UxuuzeyQjHQ3yTYAogxGzi6nidQjXv5sUtFiGYJPcZGReP3tEL7D6yoY3ZRqxqR71shzey2BnEoKaeJq" target="_blank" style="font-family: var(--mono); font-size: 10px; color: var(--cyan); text-decoration: none; margin-left: 12px; white-space: nowrap;">Solscan ↗</a>
+          </div>
+          <div style="display: flex; justify-content: space-between; align-items: center; background-color: var(--bg); padding: 6px 12px; border-radius: 4px; border: 1px solid var(--line);">
+            <code style="font-family: var(--mono); font-size: 10.5px; color: var(--dim); word-break: break-all;">3e6gSbWn6xmnY4mW62YBWVgVpDhbcUfXZ2KMiXVhagtK1NhedKX18TZWj5BoZZtnKNW889v4YKi2kueZkkRmr1wf</code>
+            <a href="https://solscan.io/tx/3e6gSbWn6xmnY4mW62YBWVgVpDhbcUfXZ2KMiXVhagtK1NhedKX18TZWj5BoZZtnKNW889v4YKi2kueZkkRmr1wf" target="_blank" style="font-family: var(--mono); font-size: 10px; color: var(--cyan); text-decoration: none; margin-left: 12px; white-space: nowrap;">Solscan ↗</a>
+          </div>
+          <div style="display: flex; justify-content: space-between; align-items: center; background-color: var(--bg); padding: 6px 12px; border-radius: 4px; border: 1px solid var(--line);">
+            <code style="font-family: var(--mono); font-size: 10.5px; color: var(--dim); word-break: break-all;">Uyh8o5cANS81tHK5huMexzycamZhHSGcKauwzdcc3q7VkmmBtvhhYxnb8364k6zTYfbxCrCDrWFEshdgeoBHifC</code>
+            <a href="https://solscan.io/tx/Uyh8o5cANS81tHK5huMexzycamZhHSGcKauwzdcc3q7VkmmBtvhhYxnb8364k6zTYfbxCrCDrWFEshdgeoBHifC" target="_blank" style="font-family: var(--mono); font-size: 10px; color: var(--cyan); text-decoration: none; margin-left: 12px; white-space: nowrap;">Solscan ↗</a>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Entry 09 -->
+    <div class="trace-card" data-status="landed">
+      <div class="trace-hdr">
+        <div class="trace-title">
+          <span style="color: var(--cyan); font-family: var(--mono); font-size: 11px; font-weight: bold;">[ENTRY 09]</span>
+          <h3>Bundle 3bfbb722bb7b11aab8e4597e9659e11b95b91910630830e86548f32bf895c247</h3>
+        </div>
+        <div class="trace-meta">
+          <span class="trace-badge success">Finalized</span>
+        </div>
+      </div>
+      <div class="trace-timeline">
+        <div class="timeline-node"><span class="timeline-label">Sub</span> <span class="timeline-val">428628204</span></div>
+        <div class="timeline-arrow">➔</div>
+        <div class="timeline-node"><span class="timeline-label">Proc</span> <span class="timeline-val">428628211</span></div>
+        <div class="timeline-arrow">➔</div>
+        <div class="timeline-node"><span class="timeline-label">Conf</span> <span class="timeline-val">428628211</span></div>
+        <div class="timeline-arrow">➔</div>
+        <div class="timeline-node"><span class="timeline-label">Final</span> <span class="timeline-val">428628211</span></div>
+      </div>
+      <div class="trace-metrics-grid">
+        <div class="metric-item"><span class="metric-lbl">Tip Paid</span><span class="metric-val">6,052,744 lamports</span></div>
+        <div class="metric-item"><span class="metric-lbl">Attempt</span><span class="metric-val">1</span></div>
+        <div class="metric-item"><span class="metric-lbl">Operation</span><span class="metric-val">Meteora Remove Liquidity & Other & Meteora Add Liquidity</span></div>
+        <div class="metric-item"><span class="metric-lbl">Confirmation</span><span class="metric-val">Jito Stream</span></div>
+      </div>
+      <div style="margin-top: 14px; border-top: 1px dashed var(--line); padding-top: 12px;">
+        <span class="metric-lbl" style="display: block; margin-bottom: 6px;">Signatures & Explorer Links</span>
+        <div style="display: flex; flex-direction: column; gap: 6px;">
+          <div style="display: flex; justify-content: space-between; align-items: center; background-color: var(--bg); padding: 6px 12px; border-radius: 4px; border: 1px solid var(--line);">
+            <code style="font-family: var(--mono); font-size: 10.5px; color: var(--dim); word-break: break-all;">2PDtiALfQYC4xCLgS3Yzp53REaP7RuTQwPLDazfueX7jvqkgySioJdhdTx1K2hmWosm2trnwiJzajECRsaGkiiVm</code>
+            <a href="https://solscan.io/tx/2PDtiALfQYC4xCLgS3Yzp53REaP7RuTQwPLDazfueX7jvqkgySioJdhdTx1K2hmWosm2trnwiJzajECRsaGkiiVm" target="_blank" style="font-family: var(--mono); font-size: 10px; color: var(--cyan); text-decoration: none; margin-left: 12px; white-space: nowrap;">Solscan ↗</a>
+          </div>
+          <div style="display: flex; justify-content: space-between; align-items: center; background-color: var(--bg); padding: 6px 12px; border-radius: 4px; border: 1px solid var(--line);">
+            <code style="font-family: var(--mono); font-size: 10.5px; color: var(--dim); word-break: break-all;">2fKXZA4rPRqP5yNanuwF3sapnYi8Y5EK1TSSVUVHCqZvFjCtXhuHexxvQmwgxk254Fp1m9DvhtuGpXtEf32V379i</code>
+            <a href="https://solscan.io/tx/2fKXZA4rPRqP5yNanuwF3sapnYi8Y5EK1TSSVUVHCqZvFjCtXhuHexxvQmwgxk254Fp1m9DvhtuGpXtEf32V379i" target="_blank" style="font-family: var(--mono); font-size: 10px; color: var(--cyan); text-decoration: none; margin-left: 12px; white-space: nowrap;">Solscan ↗</a>
+          </div>
+          <div style="display: flex; justify-content: space-between; align-items: center; background-color: var(--bg); padding: 6px 12px; border-radius: 4px; border: 1px solid var(--line);">
+            <code style="font-family: var(--mono); font-size: 10.5px; color: var(--dim); word-break: break-all;">539jhaoRW4DkFMSSmyLFMwxcDrysZf242EK7YZXHbegcL22WseSz8u83rWTVoKBHsKVt5HbUBZBwT3G2ZejyUuGa</code>
+            <a href="https://solscan.io/tx/539jhaoRW4DkFMSSmyLFMwxcDrysZf242EK7YZXHbegcL22WseSz8u83rWTVoKBHsKVt5HbUBZBwT3G2ZejyUuGa" target="_blank" style="font-family: var(--mono); font-size: 10px; color: var(--cyan); text-decoration: none; margin-left: 12px; white-space: nowrap;">Solscan ↗</a>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Entry 10 -->
+    <div class="trace-card" data-status="landed">
+      <div class="trace-hdr">
+        <div class="trace-title">
+          <span style="color: var(--cyan); font-family: var(--mono); font-size: 11px; font-weight: bold;">[ENTRY 10]</span>
+          <h3>Bundle 3bad93b2ad3c6d3bf41a0c04227f1d4c392ecd74e3c794e6d1678465bc9367a1</h3>
+        </div>
+        <div class="trace-meta">
+          <span class="trace-badge success">Finalized</span>
+        </div>
+      </div>
+      <div class="trace-timeline">
+        <div class="timeline-node"><span class="timeline-label">Sub</span> <span class="timeline-val">428627097</span></div>
+        <div class="timeline-arrow">➔</div>
+        <div class="timeline-node"><span class="timeline-label">Proc</span> <span class="timeline-val">428627108</span></div>
+        <div class="timeline-arrow">➔</div>
+        <div class="timeline-node"><span class="timeline-label">Conf</span> <span class="timeline-val">428627108</span></div>
+        <div class="timeline-arrow">➔</div>
+        <div class="timeline-node"><span class="timeline-label">Final</span> <span class="timeline-val">428627108</span></div>
+      </div>
+      <div class="trace-metrics-grid">
+        <div class="metric-item"><span class="metric-lbl">Tip Paid</span><span class="metric-val">6,503,220 lamports</span></div>
+        <div class="metric-item"><span class="metric-lbl">Attempt</span><span class="metric-val">1</span></div>
+        <div class="metric-item"><span class="metric-lbl">Operation</span><span class="metric-val">Meteora Remove Liquidity & Other & Meteora Add Liquidity</span></div>
+        <div class="metric-item"><span class="metric-lbl">Confirmation</span><span class="metric-val">Jito Stream</span></div>
+      </div>
+      <div style="margin-top: 14px; border-top: 1px dashed var(--line); padding-top: 12px;">
+        <span class="metric-lbl" style="display: block; margin-bottom: 6px;">Signatures & Explorer Links</span>
+        <div style="display: flex; flex-direction: column; gap: 6px;">
+          <div style="display: flex; justify-content: space-between; align-items: center; background-color: var(--bg); padding: 6px 12px; border-radius: 4px; border: 1px solid var(--line);">
+            <code style="font-family: var(--mono); font-size: 10.5px; color: var(--dim); word-break: break-all;">3FU6dfHxePAif4HGqR5pNc3578iGbM78oUCCVjQSo6s5dP2iF4efERjKvJfo6yQC8nFZxy6EQEC7goipD2zjokB6</code>
+            <a href="https://solscan.io/tx/3FU6dfHxePAif4HGqR5pNc3578iGbM78oUCCVjQSo6s5dP2iF4efERjKvJfo6yQC8nFZxy6EQEC7goipD2zjokB6" target="_blank" style="font-family: var(--mono); font-size: 10px; color: var(--cyan); text-decoration: none; margin-left: 12px; white-space: nowrap;">Solscan ↗</a>
+          </div>
+          <div style="display: flex; justify-content: space-between; align-items: center; background-color: var(--bg); padding: 6px 12px; border-radius: 4px; border: 1px solid var(--line);">
+            <code style="font-family: var(--mono); font-size: 10.5px; color: var(--dim); word-break: break-all;">3JFnUdi8bGEKQp5mp2nzNjsUXQb6jCGnTGvrcjTEUJxeKjCtYh1Gv3RQPGC8xuAeLoKnpNyp1QhF4PcvK1GASqGG</code>
+            <a href="https://solscan.io/tx/3JFnUdi8bGEKQp5mp2nzNjsUXQb6jCGnTGvrcjTEUJxeKjCtYh1Gv3RQPGC8xuAeLoKnpNyp1QhF4PcvK1GASqGG" target="_blank" style="font-family: var(--mono); font-size: 10px; color: var(--cyan); text-decoration: none; margin-left: 12px; white-space: nowrap;">Solscan ↗</a>
+          </div>
+          <div style="display: flex; justify-content: space-between; align-items: center; background-color: var(--bg); padding: 6px 12px; border-radius: 4px; border: 1px solid var(--line);">
+            <code style="font-family: var(--mono); font-size: 10.5px; color: var(--dim); word-break: break-all;">4K2ei2eZtURL1Hk9TSvWhG3LbVz4wRN9kQDrs3QEJdTdp9vESpLPjb9tZe4SGVGx1neyFuKnW1DKPJJBBBCugjib</code>
+            <a href="https://solscan.io/tx/4K2ei2eZtURL1Hk9TSvWhG3LbVz4wRN9kQDrs3QEJdTdp9vESpLPjb9tZe4SGVGx1neyFuKnW1DKPJJBBBCugjib" target="_blank" style="font-family: var(--mono); font-size: 10px; color: var(--cyan); text-decoration: none; margin-left: 12px; white-space: nowrap;">Solscan ↗</a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- SECTION 5 - FAQ -->
+<section id="faq" class="reveal">
+  <div class="sec-num">Section 05 — Operational insights</div>
+  <h2 class="sec-title">Field notes from mainnet.</h2>
+  <p class="sec-desc">Answers to the network-level questions that surface during real contention runs.</p>
+
+  <div class="faq-list">
+    <div class="faq-item open">
+      <button class="faq-q"><span><span class="k">Q1</span>processed_at vs confirmed_at delta</span><span class="ic">+</span></button>
+      <div class="faq-a"><div class="faq-a-inner">Measures consensus vote propagation across the validator network.
+        <ul>
+          <li><b>Optimal:</b> 400–800 ms (1–2 slots).</li>
+          <li><b>Degraded:</b> 2+ seconds under congestion or micro-forks.</li>
+          <li><b>SDK action:</b> AutoLand scales backpressure delays until consensus stabilizes.</li>
+        </ul>
+      </div></div>
+    </div>
+    <div class="faq-item">
+      <button class="faq-q"><span><span class="k">Q2</span>Why avoid finalized blockhashes</span><span class="ic">+</span></button>
+      <div class="faq-a"><div class="faq-a-inner">Blockhashes are valid for 150 slots (~60s); finalized status takes ~13–15s.
+        <ul>
+          <li><b>Validity loss:</b> a finalized hash burns 20–25% of its lifespan before signing.</li>
+          <li><b>Staleness risk:</b> congested slots stretch time; finalized hashes fail on arrival.</li>
+          <li><b>SDK action:</b> queries blockhashes at <code style="color:var(--cyan)">confirmed</code> to preserve maximum window.</li>
+        </ul>
+      </div></div>
+    </div>
+    <div class="faq-item">
+      <button class="faq-q"><span><span class="k">Q3</span>What if a Jito leader skips their slot?</span><span class="ic">+</span></button>
+      <div class="faq-a"><div class="faq-a-inner">Jito bundles route off-chain to a specific validator. Skipped slot = dropped bundle.
+        <ul>
+          <li><b>Leader tracking:</b> <code style="color:var(--cyan)">LeaderWindowDetector</code> holds dispatch if the window is unfavorable.</li>
+          <li><b>Multi-region:</b> dispatch to regional block engines in parallel to mitigate routing drops.</li>
+          <li><b>AI advisor:</b> updates blockhash and tip immediately for the next viable window.</li>
+        </ul>
+      </div></div>
+    </div>
+    <div class="faq-item">
+      <button class="faq-q"><span><span class="k">Q4</span>What causes the anonymous searcher throttling bug?</span><span class="ic">+</span></button>
+      <div class="faq-a"><div class="faq-a-inner">During high-congestion spikes, Jito's public Block Engine silently throttles and drops unauthenticated searcher bundle submissions.
+        <ul>
+          <li><b>Rate limit throttling:</b> Anonymous submissions hit strict quota blocks during transaction wars.</li>
+          <li><b>SDK action:</b> Integrates authenticated Jito UUID keys inside our RPC client, elevating the quota to a guaranteed 2 req/s.</li>
+        </ul>
+      </div></div>
+    </div>
+    <div class="faq-item">
+      <button class="faq-q"><span><span class="k">Q5</span>How do you handle event-driven concurrency retry races?</span><span class="ic">+</span></button>
+      <div class="faq-a"><div class="faq-a-inner">If the AI Advisor takes longer than a block time (~400ms) to diagnose a failure, incoming slot events can trigger parallel loops, overwriting states and silently dropping retries.
+        <ul>
+          <li><b>Concurrency hazard:</b> "Return early if busy" logic in retry loops results in dropping the most important transaction signals.</li>
+          <li><b>SDK action:</b> Implemented a thread-safe locked queue semaphore. New failure events are queued and drained sequentially once the active advisor loop completes.</li>
+        </ul>
+      </div></div>
+    </div>
+  </div>
+</section>
+
+</div>
+
+<footer>
+  <div class="wrap foot">
+    <div class="l">AutoLand · specifications · MIT · © 2026</div>
+    <a href="https://github.com/Timadigwe/Autoland" target="_blank">github.com/Timadigwe/Autoland ↗</a>
+  </div>
+</footer>
+
+<script>
+/* Scroll progress */
+const prog = document.getElementById('progress');
+addEventListener('scroll', () => {
+  const h = document.documentElement.scrollHeight - innerHeight;
+  prog.style.width = (scrollY / h * 100) + '%';
+});
+
+/* Reveal on scroll */
+const io = new IntersectionObserver(es => es.forEach(e => e.isIntersecting && e.target.classList.add('in')), {threshold:.12});
+document.querySelectorAll('.reveal').forEach(el => io.observe(el));
+
+/* Count-up */
+const cio = new IntersectionObserver(es => es.forEach(e => {
+  if (!e.isIntersecting) return;
+  const el = e.target, t = +el.dataset.count;
+  let n = 0; const step = Math.max(1, t/50);
+  const tick = () => { n += step; if (n >= t) { el.textContent = t; } else { el.textContent = Math.floor(n); requestAnimationFrame(tick); } };
+  tick(); cio.unobserve(el);
+}));
+document.querySelectorAll('[data-count]').forEach(el => cio.observe(el));
+
+/* Simulator */
+const tip = document.getElementById('tip'), cu = document.getElementById('cu');
+const tipVal = document.getElementById('tip-val'), cuVal = document.getElementById('cu-val');
+const lamOut = document.getElementById('lam-out'), cuOut = document.getElementById('cu-out');
+const scoreEl = document.getElementById('score'), verdict = document.getElementById('verdict'), ring = document.getElementById('ring');
+function sim(){
+  const tipSol = tip.value / 1000; // 1..100 -> 0.001..0.1
+  const cuVal2 = cu.value * 1000; // 10..1400 -> 10k..1.4M
+  const lam = tipSol * 1e9;
+  const score = lam / cuVal2;
+  tipVal.textContent = tipSol.toFixed(3) + ' SOL';
+  cuVal.textContent = cuVal2.toLocaleString() + ' CU';
+  lamOut.textContent = lam.toLocaleString();
+  cuOut.textContent = cuVal2.toLocaleString();
+  scoreEl.textContent = score.toFixed(1);
+  // ring: 0..200 lam/CU maps to full circle
+  const pct = Math.min(1, score/200);
+  ring.style.strokeDashoffset = 502 - (502 * pct);
+  tip.style.setProperty('--p', (tip.value-1)/99*100 + '%');
+  cu.style.setProperty('--p', (cu.value-10)/1390*100 + '%');
+  if (score > 50) { verdict.className = 'status win'; verdict.textContent = '✓ OUTBIDS COMPETITOR · ' + Math.round(score/50*100) + '% relative density'; }
+  else if (score >= 50) { verdict.className = 'status win'; verdict.textContent = '≈ MATCHES COMPETITOR'; }
+  else { verdict.className = 'status lose'; verdict.textContent = '✕ DROPPED · outbid by baseline'; }
+}
+tip.addEventListener('input', sim); cu.addEventListener('input', sim); sim();
+
+// --- Live Logs Filter ---
+function filterLogs(status) {
+  // Toggle button active state
+  const buttons = document.querySelectorAll('.filter-btn');
+  buttons.forEach(btn => btn.classList.remove('active'));
+
+  if (status === 'all') document.getElementById('btn-all').classList.add('active');
+  if (status === 'landed') document.getElementById('btn-landed').classList.add('active');
+  if (status === 'recovered') document.getElementById('btn-recovered').classList.add('active');
+  if (status === 'fallback') document.getElementById('btn-fallback').classList.add('active');
+
+  // Show/hide cards
+  const cards = document.querySelectorAll('.trace-card');
+  cards.forEach(card => {
+    const cardStatus = card.getAttribute('data-status');
+    if (status === 'all' || cardStatus === status) {
+      card.style.display = 'block';
+    } else {
+      card.style.display = 'none';
+    }
+  });
+}
+
+/* Stages hover activation */
+const stages = document.querySelectorAll('.stage');
+stages.forEach(s => s.addEventListener('mouseenter', () => {
+  stages.forEach(x => x.classList.remove('active'));
+  s.classList.add('active');
+}));
+
+/* FAQ accordion */
+document.querySelectorAll('.faq-q').forEach(b => b.addEventListener('click', () => {
+  b.parentElement.classList.toggle('open');
+}));
+
+/* Animated background — particles + connections */
+const c = document.getElementById('bg-canvas'), ctx = c.getContext('2d');
+let W, H, parts;
+function resize(){ W = c.width = innerWidth; H = c.height = innerHeight;
+  parts = Array.from({length: Math.min(80, Math.floor(W*H/22000))}, () => ({
+    x:Math.random()*W, y:Math.random()*H,
+    vx:(Math.random()-.5)*.3, vy:(Math.random()-.5)*.3,
+    r:Math.random()*1.6+.4
+  }));
+}
+resize(); addEventListener('resize', resize);
+function tick(){
+  ctx.clearRect(0,0,W,H);
+  for (const p of parts){
+    p.x += p.vx; p.y += p.vy;
+    if (p.x<0||p.x>W) p.vx*=-1;
+    if (p.y<0||p.y>H) p.vy*=-1;
+    ctx.beginPath(); ctx.arc(p.x,p.y,p.r,0,Math.PI*2);
+    ctx.fillStyle='rgba(34,229,255,.6)'; ctx.fill();
+  }
+  for (let i=0;i<parts.length;i++) for (let j=i+1;j<parts.length;j++){
+    const a=parts[i], b=parts[j], dx=a.x-b.x, dy=a.y-b.y, d=Math.hypot(dx,dy);
+    if (d<130){
+      ctx.strokeStyle=`rgba(139,123,255,${(1-d/130)*.22})`;
+      ctx.lineWidth=.6;
+      ctx.beginPath(); ctx.moveTo(a.x,a.y); ctx.lineTo(b.x,b.y); ctx.stroke();
+    }
+  }
+  requestAnimationFrame(tick);
+}
+tick();
+</script>
+</body>
+</html>

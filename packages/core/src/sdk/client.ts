@@ -32,6 +32,7 @@ export interface AutoLandConfig {
   maxAttempts?: number;
   confirmTimeoutMs?: number;
   submitCooldownMs?: number;
+  defaultUrgency?: "normal" | "high";
 }
 
 // Re-export types for backward compatibility / caller convenience
@@ -44,6 +45,7 @@ export class AutoLand extends EventEmitter {
   private maxAttempts: number;
   private confirmTimeoutMs: number;
   private submitCooldownMs: number;
+  private defaultUrgency: "normal" | "high";
 
   private stream?: StreamManager;
   private oracle?: CongestionOracle;
@@ -76,6 +78,7 @@ export class AutoLand extends EventEmitter {
     this.maxAttempts = cfg.maxAttempts ?? Number(process.env.LIVE_MAX_ATTEMPTS ?? 5);
     this.confirmTimeoutMs = cfg.confirmTimeoutMs ?? Number(process.env.LIVE_CONFIRM_TIMEOUT_MS ?? 30_000);
     this.submitCooldownMs = cfg.submitCooldownMs ?? Number(process.env.LIVE_SUBMIT_COOLDOWN_MS ?? 20_000);
+    this.defaultUrgency = cfg.defaultUrgency ?? "high";
 
     this.dispatcher = new BundleDispatcher({
       sdkConnection: this.sdkConnection,
@@ -318,6 +321,7 @@ export class AutoLand extends EventEmitter {
       log.info("SDK not started; starting automatically...");
       await this.start();
     }
-    return this.dispatcher.submit(txInput, opts);
+    const resolvedOpts = { urgency: this.defaultUrgency, ...opts };
+    return this.dispatcher.submit(txInput, resolvedOpts);
   }
 }

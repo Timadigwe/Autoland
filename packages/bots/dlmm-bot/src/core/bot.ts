@@ -1,4 +1,4 @@
-import { Connection, Keypair, VersionedTransaction } from "@solana/web3.js";
+import { Connection, Keypair, VersionedTransaction, SystemProgram, PublicKey, Transaction } from "@solana/web3.js";
 import fs from "fs";
 import path from "path";
 import { ConfigManager } from "../utils/config";
@@ -157,6 +157,9 @@ export class DlmmBot {
         });
 
         const submitOpts: any = {
+          // AutoLand options:
+          //   "normal" -> Direct public RPC submission for simple/non-time-sensitive actions (e.g. transfers)
+          //   "high"   -> Dynamic Jito tip-bidding bundle execution for high-contention trading
           urgency: "high"
         };
 
@@ -185,5 +188,33 @@ export class DlmmBot {
   public toggleFeeTooLowInjection(): void {
     this.injectFeeTooLow = !this.injectFeeTooLow;
     this.logger.info(`[TEST] Jito low-fee injection toggled: ${this.injectFeeTooLow ? "ENABLED (Will apply to next rebalance)" : "DISABLED"}`);
+  }
+
+  /**
+   * Demonstration of non-time-sensitive transactions using the "normal" urgency option,
+   * which bypasses Jito bundle tip-bidding and routes directly to the public RPC node.
+   */
+  public async withdrawNormalFees(toAddress: string, amountLamports: number): Promise<void> {
+    const wallet = this.getActiveWallet();
+    if (!wallet) return;
+
+    this.logger.info(`[BOT] Initiating normal urgency withdrawal to ${toAddress}...`);
+    
+    const tx = new Transaction().add(
+      SystemProgram.transfer({
+        fromPubkey: wallet.keypair.publicKey,
+        toPubkey: new PublicKey(toAddress),
+        lamports: amountLamports
+      })
+    );
+
+    const submitOpts = { urgency: "normal" as const };
+    const result = await this.autoland.submit(tx, submitOpts);
+
+    if (result.landed) {
+      this.logger.info(`[BOT] Fee withdrawal landed successfully via public RPC @ slot ${result.slot}, signature: ${result.signature}`);
+    } else {
+      this.logger.error(`[BOT] Normal urgency withdrawal failed: ${result.error}`);
+    }
   }
 }
