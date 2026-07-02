@@ -49,6 +49,33 @@ Even though Transaction B pays a **14x higher absolute tip** (70M lamports vs 5M
 
 ## SDK Architecture & Data Flow
 
+```mermaid
+graph TD
+    Client[Client App] -->|submit tx, urgency=high| Dispatcher[BundleDispatcher]
+    
+    %% Telemetry Layer
+    Stream[Yellowstone gRPC Stream] -->|telemetry updates| CompTracker[CompetitorTipTracker]
+    CompTracker -->|maxCompetitorTipPerCU| BoundedQ[BoundedQueue]
+    BoundedQ -->|rate limiting & backpressure| Dispatcher
+    
+    %% Pricing Layer
+    Dispatcher -->|1. Compute CUs via simulation| CUOpt[CU Resizer]
+    Dispatcher -->|2. Get Competitor rate / Jito Floor| TipModel[computeTip Model]
+    
+    %% Execution Layer
+    Dispatcher -->|3. Assemble & Sign Bundle| JitoRPC[Jito Block Engine]
+    
+    %% Tracking Layer
+    JitoRPC -->|onBundleResult| Tracker[LifecycleTracker]
+    Tracker -->|Log stages processed/confirmed/finalized| DB[(SQLite: autoland.db)]
+    
+    %% Recovery Loop
+    Tracker -->|Rejection / Skip / Expiry| Advisor[AI Advisor ReAct Loop]
+    Advisor -->|read history| DB
+    Advisor -->|read tips & floor| TipModel
+    Advisor -->|RETRY: bump tip & refresh blockhash| Dispatcher
+```
+
 AutoLand solves this by tracking the localized contention and competition *for a specific account* dynamically:
 
 ### 1. Dynamic Account Competition Tracking
@@ -138,7 +165,19 @@ Under congestion, a transaction rarely lands in the immediate scheduled slot. Th
 * **Maximum Tip Paid**: 15,000,000 lamports (during a hyper-contested bidding war)
 * **Average Tip Paid**: **1,829,786.17 lamports**
 
-Instead of naively opening bids at high percentiles (which drains budget), AutoLand opens bids at Jito's floor. It escalates tips *only* when the stream detects `fee_too_low` failures, climbing the tip ladder (`floor -> p50 -> p75 -> p95 -> p99`). This saved up to **60%** in tip fees during low-contention windows compared to standard fixed-tip bots.
+AutoLand calculates and prices Jito tips dynamically using target-specific variables:
+* **Competitor Outbidding**: Rather than guess-bidding high static amounts, the dispatcher reads the active `maxCompetitorTipPerCU` rate from the Geyser stream and applies a 10% premium (`kPremium = 1.10`) to outbid active competitors in the same slot:
+  $$\text{Target Tip} = \max(\text{scaledTip}, \text{estimatedCUs} \times \text{maxCompetitorTipPerCU} \times 1.10)$$
+  where $\text{scaledTip} = \text{cuScalar} \times \text{basePercentileLamports} \times \text{alphaContention}$.
+* **Urgency & Volatility Scaler**: Dynamically maps the transaction's urgency configuration to base Jito percentiles (`p25` for low, `p50` for normal, `p75` for high), shifting up to `p95` or `p99` if the live fee volatility spread ($\text{spread} = \text{p95} / \text{ema}$) indicates high congestion:
+  $$\text{level} = \text{baseLevel} + \begin{cases} 2 & \text{if } \text{spread} > 50 \\ 1 & \text{if } \text{spread} > 15 \\ 0 & \text{otherwise} \end{cases}$$
+* **Profit-Sharing Guardrail**: If trade profit is expected, AutoLand targets a profit split percentage ($\alpha$) to remain EV-positive while outbidding, capped at a hard maximum profit share limit:
+  $$\text{Profit Share Tip} = \text{expectedProfit} \times \alpha$$
+  $$\alpha = \min(\text{maxProfitSharePct}, 0.40 + (\text{alphaContention} - 1.0) \times 0.125)$$
+  $$\text{Final Tip} = \min(\text{ceiling}, \max(\text{floor}, \min(\text{Target Tip}, \text{expectedProfit} \times \text{maxProfitSharePct})))$$
+* **Advisor Escalations**: On failed attempts, the AI Advisor applies a 1.5x–2.0x multiplier to the prior tip to force the transaction past congestion gates.
+
+
 
 ---
 
@@ -166,11 +205,16 @@ Each piece of the AutoLand stack was selected to satisfy the physical latency an
 * **Trade-Off**: Network API calls add ~100–300ms of latency compared to local heuristic scripts.
 * **Why it's worth it**: Standard scripts use rigid, hardcoded heuristics that cannot classify novel failure logs. By delegating rejections to a fast LLM endpoint (like Cerebras' Llama 3.1 8B with sub-100ms output speed), the bot reasons about complex failures (e.g., custom program error codes, validator drops) and writes precise recovery mutations (blockhash refreshes, tip escalations, slippage changes) in real-time.
 
-### 5. Low-Latency Competitor Outbidding vs. Asynchronous AI Recovery
+### 5. In-Memory Outbidding vs. Asynchronous AI Advisor
 To prevent transaction failures caused by LLM API latency (~150-400ms) on slot-sensitive execution paths, AutoLand isolates active outbidding calculations from failure recovery loops:
 * **Real-Time Competitor Tracking (Low Latency / CPU Memory)**: When the client invokes `submit(...)`, the `BundleDispatcher` checks the `CompetitorTipTracker` for active competitor write-locks on the target accounts. If competitors are active (detected via Yellowstone gRPC), it calculates the outbidding `Tip/CU` rate in-memory. If no competitors are active, it queries `tipFloorService` to retrieve global Jito floors. Bidding calculations are completed in microsecond speeds with zero AI overhead.
 * **AI Advisor Recovery (Asynchronous / Cognitive)**: The AI `Agent` (AI Advisor) is triggered *only* when the `LifecycleTracker` classifies a transaction rejection (e.g. `bundle_dropped`, `fee_too_low`, `simulation_failed`, or `leader_skip`). It runs an event-driven **ReAct Loop** (up to 5 iterations) to diagnose the failure. The agent makes tool calls (`get_recent_lifecycles`, `get_recent_decisions`, `get_tip_percentile_info`) to analyze SQLite history and current tip distributions, returning a mutated submission strategy (`RETRY` with higher tips, `HOLD`, `ABORT`, or `FALLBACK_RPC`). 
 * **Fallback Safeguards**: If the transaction fails 3 consecutive times on Jito (attempt >= 3), the tracker enforces a hard fallback (`FALLBACK_RPC`) to bypass Jito and submit via public RPC nodes, ensuring eventual transaction inclusion.
+
+### 6. SDK-First Architecture over Hosted APIs
+* **Decision**: We designed AutoLand as an in-process SDK (`@autoland/core`) rather than a hosted API gateway or centralized service.
+* **Why it's worth it**: In high-contention trading environments (such as Meteora DLMM pool rebalancing or Pump.fun swaps), transaction rejections are frequently caused by dynamic transaction logic (e.g. slippage checks failing or state updates changing pool structures in milliseconds) rather than simple network drops. By shipping as an SDK, developers can inspect failures, re-calculate swap logic, and re-sign instruction bundles programmatically on retries. This setup keeps control in-process, avoids the latency of external API network hops, and allows developers to customize the resubmission logic dynamically.
+
 
 ---
 
@@ -211,14 +255,13 @@ Building AutoLand taught us how clean architectural theories fail when they meet
 * **Fix**: Switched the blockhash query commitment to `confirmed` and introduced a background loop that pre-fetches and replaces the transaction's recent blockhash if it spends more than 50 slots in the queue.
 
 ### 2. Jito Anonymous Searcher Deprioritization
-* **Symptom**: During high-frequency trading simulation, our bundles were being dropped by Jito's block engine without ever entering the conflict set auction.
-* **Root Cause**: The public Jito block engine silently throttles and deprioritizes unauthenticated searcher connections during congestion spikes.
-* **Fix**: Integrated authenticated Jito UUID access keys inside our RPC client, elevating our quota to a guaranteed 2 req/s.
+* **Symptom**: During high-frequency trading simulation, our bundles were being dropped by Jito's block engine without ever entering the conflict set auction, leading us to suspect unauthenticated throttling.
+* **Root Cause**: While anonymous searcher rate limits are restrictive, obtaining a Jito UUID is a red herring—it does not solve the drop issues under heavy congestion. The actual cause was insufficient tipping limits under highly contested localized pool auctions.
+* **Fix**: Rather than chasing UUID keys, we optimized our transaction structure (reducing requested CUs via pre-flight simulations) and implemented dynamic competitor tracking via Yellowstone gRPC. This enables AutoLand to outbid competing bots in the same block or scale tips up to `p99` percentiles during extreme contention.
 
-### 3. Event-Driven Concurrency Retries
-* **Symptom**: If the AI Advisor took more than ~400ms to analyze a failure, subsequent transaction events would overwrite the active state, leading to dropped retries.
-* **Root Cause**: The callback handlers did not implement a queue state; they ran parallel asynchronous tasks that mutated shared states.
-* **Fix**: Implemented a localized retry queue using a lock semaphore in the SDK core. A retry cycle is marked as running, and any incoming bundle events are appended to a queue and drained sequentially once the advisor completes.
+### 3. Concurrency Hazard Prevention
+* **Symptom**: In event-driven transaction stacks, invoking advisor diagnostics asynchronously on detached events can introduce race conditions, where a late confirmation or new failure event triggers parallel retry loops that overwrite shared states.
+* **AutoLand Solution**: Rather than relying on concurrent event handlers (which require complex mutex semaphores), AutoLand enforces strict **sequential execution via a recursive promise chain** (`runOneSubmitAttempt`). The dispatcher synchronously awaits the transaction's confirmation window or timeout before passing control to the AI Advisor. This ensures that only one recovery analysis and resubmission runs at any time, eliminating concurrency race conditions by construction.
 
 ---
 
@@ -291,6 +334,10 @@ await autoland.submit(transferTx, { urgency: "normal" });
    ```bash
    npm start
    ```
+
+   > [!NOTE]
+   > The `@autoland/dlmm-bot` package is a reference implementation of a Meteora market-making strategy. It was built specifically to test, validate, and benchmark the `@autoland/core` SDK under live mainnet contention.
+
 
 ### Simulation / Testing
 Press **`f`** at runtime in the bot console to toggle a Jito low-fee injection test. This forces a low Jito tip (e.g. 1000 lamports), prompting Jito drops and allowing you to observe the AutoLand SDK detect the drop, invoke the AI Advisor for recovery diagnostics, and submit a corrected retry bundle.

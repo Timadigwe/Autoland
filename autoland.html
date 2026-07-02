@@ -1283,20 +1283,20 @@ footer{padding:60px 0 40px;border-top:1px solid var(--line);margin-top:80px}
       </div></div>
     </div>
     <div class="faq-item">
-      <button class="faq-q"><span><span class="k">Q4</span>What causes the anonymous searcher throttling bug?</span><span class="ic">+</span></button>
-      <div class="faq-a"><div class="faq-a-inner">During high-congestion spikes, Jito's public Block Engine silently throttles and drops unauthenticated searcher bundle submissions.
+      <button class="faq-q"><span><span class="k">Q4</span>Is a Jito UUID required to land bundles?</span><span class="ic">+</span></button>
+      <div class="faq-a"><div class="faq-a-inner">No, a Jito UUID is a red herring—it does not solve drops under heavy mainnet congestion. Landing transactions is an optimization and fee pricing problem.
         <ul>
-          <li><b>Rate limit throttling:</b> Anonymous submissions hit strict quota blocks during transaction wars.</li>
-          <li><b>SDK action:</b> Integrates authenticated Jito UUID keys inside our RPC client, elevating the quota to a guaranteed 2 req/s.</li>
+          <li><b>Bundle Optimization:</b> We minimize requested Compute Units (CUs) via pre-flight simulations, maximizing our priority score.</li>
+          <li><b>Competitor Outbidding:</b> AutoLand decodes competitor transactions via Yellowstone gRPC in real-time, scaling tips up to the <code style="color:var(--cyan)">p99</code> percentile during peak congestion.</li>
         </ul>
       </div></div>
     </div>
     <div class="faq-item">
-      <button class="faq-q"><span><span class="k">Q5</span>How do you handle event-driven concurrency retry races?</span><span class="ic">+</span></button>
-      <div class="faq-a"><div class="faq-a-inner">If the AI Advisor takes longer than a block time (~400ms) to diagnose a failure, incoming slot events can trigger parallel loops, overwriting states and silently dropping retries.
+      <button class="faq-q"><span><span class="k">Q5</span>How do you prevent concurrency races during retry cycles?</span><span class="ic">+</span></button>
+      <div class="faq-a"><div class="faq-a-inner">Instead of using concurrent asynchronous event handlers (which trigger parallel loops and require mutex semaphores), AutoLand prevents concurrency races by design using a strict sequential promise chain.
         <ul>
-          <li><b>Concurrency hazard:</b> "Return early if busy" logic in retry loops results in dropping the most important transaction signals.</li>
-          <li><b>SDK action:</b> Implemented a thread-safe locked queue semaphore. New failure events are queued and drained sequentially once the active advisor loop completes.</li>
+          <li><b>Sequential Loop:</b> The SDK core blocks and synchronously awaits the transaction's confirmation or timeout window before calling the AI Advisor.</li>
+          <li><b>Single Thread Logic:</b> Only after the advisor completes its diagnostic and returns an action does the next attempt run via a recursive promise chain, ensuring state mutations never overlap.</li>
         </ul>
       </div></div>
     </div>
