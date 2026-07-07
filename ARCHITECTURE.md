@@ -155,7 +155,7 @@ To prevent model hallucinations from causing financial loss, the advisor's sugge
 ### A. Jito-First Dispatch & Leader Window Detection
 * Transaction submission is restricted to Jito bundles to prevent toxic frontrunning or trade slippage.
 * Bundles are sent sequentially to regional Jito block engines (e.g., Frankfurt, NY, Tokyo) to minimize latency and stopped as soon as the bundle is accepted.
-* **Leader Window Alignment**: AutoLand uses a real-time **Yellowstone gRPC** stream to monitor live slot progress and leader schedule transitions. It dynamically calculates the distance to the next Jito-enabled validator, ensuring bundles are submitted exactly within the optimal leader execution window.
+* **Leader Window Alignment**: AutoLand uses a real-time **Yellowstone gRPC** stream to monitor live slot progress and leader schedule transitions. It dynamically calculates the distance to the next Jito-enabled validator, ensuring bundles are submitted exactly within the target leader execution window.
 
 ### B. Multi-Stage Lifecycle & Dual-Channel Confirmation
 To guarantee landing accuracy, the SDK implements a dual-channel confirmation pipeline. It tracks the transaction through every lifecycle stage: **Submitted → Processed → Confirmed → Finalized**, capturing:

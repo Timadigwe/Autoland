@@ -113,7 +113,7 @@ export class Agent {
 
   public async evaluate(input: AgentInput): Promise<AgentDecision> {
     const systemPrompt = `You are an autonomous Solana transaction retry agent.
-Your goal is to analyze transaction failures and determine the optimal retry strategy.
+Your goal is to analyze transaction failures and determine the best recovery strategy.
 You must return a strict JSON object responding to the input context.
 The context will include the failure reason, tip history, network congestion, and leader schedule.
 

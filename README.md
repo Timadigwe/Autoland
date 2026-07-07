@@ -224,10 +224,10 @@ To prevent transaction failures caused by LLM API latency (~150-400ms) on slot-s
 
 ### 1. What does the delta between `processed_at` and `confirmed_at` tell you about network health at the time of submission?
 The delta between the slot's `processed` timestamp (when the block leader executes the transaction and applies state mutations) and the `confirmed` timestamp (when $2/3$+ of Solana validator voting stake has signed off on the block) acts as a real-time monitor of **consensus health**.
-* **Optimal Network State**: Under normal execution conditions, this delta is between **400–800 ms** (1 to 2 slots).
-  - *Example (Landed)*: Landed bundle `82de89b4...449fefc4` (Entry 01) achieved a `processed_to_confirmed` latency of **380 ms** (~1 slot), proving near-instantaneous consensus propagation.
-* **Degraded Network State**: If this delta spikes to several seconds, it signals validator vote propagation bottlenecks. This is usually caused by excessive voting transaction congestion on the network, validator hardware processing backlogs, or micro-forking.
-  - *Example (Degraded)*: Landed bundle `5f35b7cd...d2553ae0` (Entry 08) was confirmed via the fallback Status API with a `processed_to_confirmed` delta of **1,250 ms** (~3 slots), indicating validator vote propagation delays under transient network congestion.
+* **Low-Congestion Slots**: Under typical conditions, this delta runs between **400–800 ms** (1 to 2 slots).
+  - *Example*: Landed bundle `82de89b4...449fefc4` (Entry 01) achieved a `processed_to_confirmed` latency of **380 ms** (~1 slot), verifying rapid consensus propagation.
+* **Peak Congestion Behavior**: When validator vote propagation slows down, this delta spikes to several seconds. This is usually caused by excessive voting transaction congestion on the network, validator hardware processing backlogs, or micro-forking.
+  - *Example*: Landed bundle `5f35b7cd...d2553ae0` (Entry 08) was confirmed via the fallback Status API with a `processed_to_confirmed` delta of **1,250 ms** (~3 slots), indicating validator vote propagation delays under transient network congestion.
 * **SDK Monitoring**: AutoLand tracks these latency patterns via its `CongestionOracle` to scale safety delays and determine when to defer submissions.
 
 ### 2. Why should you never use `finalized` commitment when fetching a blockhash for a time-sensitive transaction?
