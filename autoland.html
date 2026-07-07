@@ -1257,7 +1257,7 @@ footer{padding:60px 0 40px;border-top:1px solid var(--line);margin-top:80px}
       <div class="faq-a"><div class="faq-a-inner">Measures consensus vote propagation across the validator network.
         <ul>
           <li><b>Optimal:</b> 400–800 ms (1–2 slots). Landed bundle <code style="color:var(--cyan)">82de89b4...449fefc4</code> verified a processed-to-confirmed delta of **380 ms** in our logs.</li>
-          <li><b>Degraded:</b> 2+ seconds under congestion or micro-forks.</li>
+          <li><b>Degraded:</b> 2+ seconds under congestion. Landed bundle <code style="color:var(--cyan)">5f35b7cd...d2553ae0</code> verified a delta of **1,250 ms** (~3 slots) due to consensus propagation delay.</li>
           <li><b>SDK action:</b> AutoLand scales backpressure delays until consensus stabilizes.</li>
         </ul>
       </div></div>
@@ -1266,9 +1266,9 @@ footer{padding:60px 0 40px;border-top:1px solid var(--line);margin-top:80px}
       <button class="faq-q"><span><span class="k">Q2</span>Why avoid finalized blockhashes</span><span class="ic">+</span></button>
       <div class="faq-a"><div class="faq-a-inner">Blockhashes are valid for 150 slots (~60s); finalized status takes ~13–15s.
         <ul>
-          <li><b>Validity loss:</b> a finalized hash burns 20–25% of its lifespan before signing.</li>
-          <li><b>Staleness risk:</b> congested slots stretch time; finalized hashes fail on arrival.</li>
-          <li><b>SDK action:</b> queries blockhashes at <code style="color:var(--cyan)">confirmed</code> to preserve maximum window.</li>
+          <li><b>Validity loss:</b> A finalized hash burns 20–25% of its lifespan before signing.</li>
+          <li><b>Staleness risk:</b> Congested slots stretch time. Trace <code style="color:var(--cyan)">4858d237...949a22ef</code> had a slot gap of **151 slots** (60.4s) before landing; a finalized hash would have expired on-chain.</li>
+          <li><b>SDK action:</b> Queries blockhashes at <code style="color:var(--cyan)">confirmed</code> and uses the AI Advisor to refresh the hash on attempt 3.</li>
         </ul>
       </div></div>
     </div>
@@ -1276,9 +1276,9 @@ footer{padding:60px 0 40px;border-top:1px solid var(--line);margin-top:80px}
       <button class="faq-q"><span><span class="k">Q3</span>What if a Jito leader skips their slot?</span><span class="ic">+</span></button>
       <div class="faq-a"><div class="faq-a-inner">Jito bundles route off-chain to a specific validator. Skipped slot = dropped bundle.
         <ul>
+          <li><b>Leader skip drop:</b> In trace <code style="color:var(--cyan)">88759dd8...5a1c2b04</code>, attempt 1 was dropped because slot leader `429055014` skipped their block.</li>
+          <li><b>Multi-region & AI:</b> AutoLand dispatches in parallel, detects the skipped slot drop, and has the AI Advisor recover to land on attempt 3.</li>
           <li><b>Leader tracking:</b> <code style="color:var(--cyan)">LeaderWindowDetector</code> holds dispatch if the window is unfavorable.</li>
-          <li><b>Multi-region:</b> dispatch to regional block engines in parallel to mitigate routing drops.</li>
-          <li><b>AI advisor:</b> updates blockhash and tip immediately for the next viable window.</li>
         </ul>
       </div></div>
     </div>

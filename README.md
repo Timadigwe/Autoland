@@ -224,8 +224,10 @@ To prevent transaction failures caused by LLM API latency (~150-400ms) on slot-s
 
 ### 1. What does the delta between `processed_at` and `confirmed_at` tell you about network health at the time of submission?
 The delta between the slot's `processed` timestamp (when the block leader executes the transaction and applies state mutations) and the `confirmed` timestamp (when $2/3$+ of Solana validator voting stake has signed off on the block) acts as a real-time monitor of **consensus health**.
-* **Optimal Network State**: Under normal execution conditions, this delta is between **400–800 ms** (1 to 2 slots). In our logged lifecycle trace (such as landed bundle `82de89b4...449fefc4`), we measured a real-world `processed_to_confirmed` delta of **380 ms**, proving a healthy consensus propagation window.
+* **Optimal Network State**: Under normal execution conditions, this delta is between **400–800 ms** (1 to 2 slots).
+  - *Example (Landed)*: Landed bundle `82de89b4...449fefc4` (Entry 01) achieved a `processed_to_confirmed` latency of **380 ms** (~1 slot), proving near-instantaneous consensus propagation.
 * **Degraded Network State**: If this delta spikes to several seconds, it signals validator vote propagation bottlenecks. This is usually caused by excessive voting transaction congestion on the network, validator hardware processing backlogs, or micro-forking.
+  - *Example (Degraded)*: Landed bundle `5f35b7cd...d2553ae0` (Entry 08) was confirmed via the fallback Status API with a `processed_to_confirmed` delta of **1,250 ms** (~3 slots), indicating validator vote propagation delays under transient network congestion.
 * **SDK Monitoring**: AutoLand tracks these latency patterns via its `CongestionOracle` to scale safety delays and determine when to defer submissions.
 
 ### 2. Why should you never use `finalized` commitment when fetching a blockhash for a time-sensitive transaction?
@@ -233,11 +235,15 @@ Solana blockhashes are valid for exactly **150 slots** (roughly 60 seconds of re
 * **Finalization Lag**: Achieving `finalized` commitment requires a block to be confirmed by supermajority voting and buried under 32+ subsequent slots (`MAX_LOCKOUT_HISTORY`). This process takes **13 to 15 seconds**.
 * **Validity Loss**: If you fetch a blockhash at `finalized` commitment, it is already 13–15 seconds old by the time the SDK receives it. You have effectively burned **20% to 25% of the transaction's lifetime** before it is even signed.
 * **Staleness Risk**: During high congestion, block times stretch. A finalized blockhash is highly likely to expire before it reaches the leader's forwarding pipeline, triggering a `Blockhash not found` rejection.
+  - *Example (Inclusion Delay)*: In trace `4858d237...949a22ef` (Entry 02), the transaction experienced a slot gap of **151 slots** (approx 60.4 seconds) between submission and execution due to validator contention. Because Solana blockhashes expire at 150 slots, if the SDK had retrieved a `finalized` blockhash (already 32 slots stale on receipt), the transaction would have expired on-chain before execution.
+  - *Example (Advisor Action)*: In the same trace `4858d237...949a22ef` (Entry 02), the AI Advisor triggered a blockhash refresh during the attempt 3 loop, resetting the validity lifetime and allowing the transaction to land successfully despite the massive 151-slot congestion delay.
 * **AutoLand Best Practice**: The SDK always queries the latest blockhash at **`confirmed`** commitment, maximizing the transaction's window of validity.
 
 ### 3. What happens to your bundle if the Jito leader skips their slot?
 If the scheduled Jito leader misses or skips their slot (due to validator crash, hardware latency, or micro-forking):
 * **The Bundle is Dropped**: Jito bundles are not gossiped across Solana's public P2P mempool. Instead, they are routed off-chain to Jito's Block Engine, which forwards them *only* to the specific validator scheduled for that slot. If that leader skips their slot, the engine drops the bundle.
+  - *Example (Slot Skip)*: In trace `88759dd8...5a1c2b04` (Entry 04), attempt 1 was dropped by Jito's Block Engine because the scheduled leader for slot `429055014` skipped their block slot, routing the transaction directly into a `bundle_dropped` state.
+  - *Example (Advisor Recovery)*: The AI Advisor intercepted the `bundle_dropped` failure from the results stream, generated a new transaction bundle, bumped the tip from the floor, and successfully landed the bundle on attempt 3.
 * **SDK Mitigation**:
   1. **Leader Window Alignment**: AutoLand tracks scheduled leaders via its `LeaderWindowDetector` and holds execution if the leader distance slots are unfavorable.
   2. **Multi-Region Dispatch**: Dispatches bundles in parallel to multiple regional Jito block engines (Frankfurt, NY, Tokyo) to minimize routing drops.
