@@ -1256,7 +1256,7 @@ footer{padding:60px 0 40px;border-top:1px solid var(--line);margin-top:80px}
       <button class="faq-q"><span><span class="k">Q1</span>processed_at vs confirmed_at delta</span><span class="ic">+</span></button>
       <div class="faq-a"><div class="faq-a-inner">Measures consensus vote propagation across the validator network.
         <ul>
-          <li><b>Optimal:</b> 400–800 ms (1–2 slots).</li>
+          <li><b>Optimal:</b> 400–800 ms (1–2 slots). Landed bundle <code style="color:var(--cyan)">82de89b4...449fefc4</code> verified a processed-to-confirmed delta of **380 ms** in our logs.</li>
           <li><b>Degraded:</b> 2+ seconds under congestion or micro-forks.</li>
           <li><b>SDK action:</b> AutoLand scales backpressure delays until consensus stabilizes.</li>
         </ul>

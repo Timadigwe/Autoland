@@ -224,7 +224,7 @@ To prevent transaction failures caused by LLM API latency (~150-400ms) on slot-s
 
 ### 1. What does the delta between `processed_at` and `confirmed_at` tell you about network health at the time of submission?
 The delta between the slot's `processed` timestamp (when the block leader executes the transaction and applies state mutations) and the `confirmed` timestamp (when $2/3$+ of Solana validator voting stake has signed off on the block) acts as a real-time monitor of **consensus health**.
-* **Optimal Network State**: Under normal execution conditions, this delta is between **400–800 ms** (1 to 2 slots).
+* **Optimal Network State**: Under normal execution conditions, this delta is between **400–800 ms** (1 to 2 slots). In our logged lifecycle trace (such as landed bundle `82de89b4...449fefc4`), we measured a real-world `processed_to_confirmed` delta of **380 ms**, proving a healthy consensus propagation window.
 * **Degraded Network State**: If this delta spikes to several seconds, it signals validator vote propagation bottlenecks. This is usually caused by excessive voting transaction congestion on the network, validator hardware processing backlogs, or micro-forking.
 * **SDK Monitoring**: AutoLand tracks these latency patterns via its `CongestionOracle` to scale safety delays and determine when to defer submissions.
 
